@@ -101,16 +101,19 @@ ASGI_APPLICATION = 'stemsite.asgi.application'
 
 # Redis for channel layer
 CHANNEL_LAYERS = {
-     "default": {
-         "BACKEND": "channels_redis.core.RedisChannelLayer",
-         "CONFIG": {
-             "hosts": [("127.0.0.1", 6379)],
-         },
-     },
-    #"default": {
-    #$    "BACKEND": "channels.layers.InMemoryChannelLayer",
-    #},
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "address": f"{os.environ.get('REDIS_HOST')}:{os.environ.get('REDIS_PORT')}",
+                "username": os.environ.get("REDIS_USERNAME"),
+                "password": os.environ.get("REDIS_PASSWORD"),
+                "ssl": True if os.environ.get("REDIS_SSL") == "True" else False,
+            }],
+        },
+    },
 }
+
 
 
 # Database
