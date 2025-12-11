@@ -1,0 +1,8 @@
+{% extends "admin/index.html" %}
+{% block content %}
+  {{ block.super }}
+  <hr>
+  <h2>Quick Actions</h2>
+  <a class="button" href="{% url 'admin_broadcast_center' %}">📢 Go to Broadcast Center</a>
+{% endblock %}
+

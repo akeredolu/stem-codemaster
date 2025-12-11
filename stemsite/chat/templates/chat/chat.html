@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Chat Support</h2>
+
+{% if not is_admin %}
+<div id="admin-status" style="margin-bottom:8px; font-weight:bold; color:#888;">
+    ● Checking status...
+</div>
+{% endif %}
+
+<div id="chat-log" style="border:1px solid #ccc; padding:10px; height:400px; overflow-y:auto; display:flex; flex-direction:column; background:#f9f9f9;"></div>
+
+{% if not is_admin %}
+<form id="chat-form" style="margin-top:10px;" autocomplete="off">
+    <input id="chat-message-input" type="text" placeholder="Type a message..." style="width:80%; padding:5px;" required />
+    <button type="submit" style="padding:5px 10px;">Send</button>
+</form>
+{% endif %}
+
+<style>
+.chat-message { 
+    padding: 8px 12px; margin-bottom: 8px; border-radius: 12px; max-width: 75%; word-wrap: break-word; 
+}
+.chat-message.sent { background: #0d6efd; color: white; align-self: flex-end; }
+.chat-message.admin { background: #e6e6e6; color: #222; align-self: flex-start; }
+.chat-message.guest { background: #f0f0f0; color: #444; align-self: flex-start; }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chatLog = document.getElementById("chat-log");
+    const adminStatusEl = document.getElementById("admin-status");
+    const chatInput = document.getElementById("chat-message-input");
+
+    const userId = "{{ sender|default:user.username|escapejs }}";
+    const userType = "{{ chat_type|default:'guest'|escapejs }}";  // guest, student, admin
+    const roomName = "{{ room_name|default:'guest_admin'|escapejs }}";
+    const isAdmin = {{ is_admin|yesno:"true,false" }};
+
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/chat/${roomName}/`);
+
+    function appendMessage(sender, message) {
+        const msgEl = document.createElement("div");
+        msgEl.classList.add("chat-message");
+
+        if(sender === userId) {
+            msgEl.classList.add("sent");
+            msgEl.textContent = `You: ${message}`;
+        } else if(sender === "admin") {
+            msgEl.classList.add("admin");
+            msgEl.textContent = `Admin: ${message}`;
+        } else {
+            msgEl.classList.add("guest");
+            msgEl.textContent = `${sender}: ${message}`;
+        }
+
+        chatLog.appendChild(msgEl);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // Load previous messages dynamically for students/admin only
+    {% if chat_type != 'guest' %}
+    fetch("{% url 'load_messages' %}?room_name=" + roomName)
+        .then(res => res.json())
+        .then(data => {
+            data.messages.forEach(msg => appendMessage(msg.sender, msg.message));
+        });
+    {% endif %}
+
+    // Admin online status check for guests/students
+    if(!isAdmin) {
+        function checkAdminStatus() {
+            fetch("{% url 'check_admin_status' %}")
+                .then(res => res.json())
+                .then(data => {
+                    adminStatusEl.innerHTML = data.online 
+                        ? '<span style="color:#0f0;">● Online</span>'
+                        : '<span style="color:#f00;">● Offline</span>';
+                });
+        }
+        checkAdminStatus();
+        setInterval(checkAdminStatus, 1000); // poll every 1 second
+    }
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if(data.type === "chat_message" && data.message) {
+            // Show only messages relevant to this room
+            if(data.sender === userId || data.sender === "admin" || data.sender_type === userType) {
+                appendMessage(data.sender, data.message);
+            }
+        }
+
+        if(data.type === "admin_status" && !isAdmin) {
+            adminStatusEl.innerHTML = data.online 
+                ? '<span style="color:#0f0;">● Online</span>'
+                : '<span style="color:#f00;">● Offline</span>';
+        }
+    };
+
+    chatSocket.onclose = () => {
+        if(!isAdmin) adminStatusEl.innerHTML = '<span style="color:#f00;">● Offline</span>';
+    };
+
+    // Send message (students/guests only)
+    if(chatInput) {
+        chatInput.closest("form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const msg = chatInput.value.trim();
+            if(!msg) return;
+
+            chatSocket.send(JSON.stringify({
+                type: "chat_message",
+                message: msg,
+                sender_type: userType,
+                sender: userId
+            }));
+
+            appendMessage(userId, msg);
+            chatInput.value = "";
+        });
+    }
+});
+</script>
+{% endblock %}
+

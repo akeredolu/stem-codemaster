@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>All Scheduled Live Sessions</h2>
+  <ul class="list-group mt-3">
+    {% for session in sessions %}
+      <li class="list-group-item">
+        <strong>{{ session.title }}</strong> — {{ session.course.title }}<br>
+        Starts: {{ session.start_time }} <br>
+        Link: <a href="{{ session.link }}" target="_blank">{{ session.link }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+

@@ -1,0 +1,55 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Admin Broadcast Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <h1 class="mb-4">📢 Admin Broadcast Center</h1>
+  <p class="text-muted">Send assignments, materials, live session links, or custom messages directly to student dashboards and emails.</p>
+
+  <form method="post" class="card p-4 bg-light">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.broadcast_type.label_tag }} {{ form.broadcast_type }}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.related_object.label_tag }} {{ form.related_object }}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.course.label_tag }} {{ form.course }}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.students.label_tag }} {{ form.students }}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.title.label_tag }} {{ form.title }}
+    </div>
+    <div class="mb-3">
+      {{ form.message.label_tag }} {{ form.message }}
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <button type="submit" class="btn btn-success">Send Broadcast</button>
+      <a href="/admin/" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<style>
+select, textarea, input[type="text"] {
+  width: 100%;
+  padding: .5rem;
+  border-radius: .375rem;
+  border: 1px solid #ccc;
+}
+</style>
+{% endblock %}
+

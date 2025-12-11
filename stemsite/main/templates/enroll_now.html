@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+    <div class="col-md-6">
+        <h2 class="text-center mb-4">Enroll Now!</h2>
+
+        <!-- Registration Check Flag (only show if user has NO username) -->
+{% if not has_registered %}
+<div class="alert alert-info mb-4" role="alert">
+    <strong>Have you registered already?</strong><br>
+    If <span class="text-success">Yes</span>, continue with enrollment below.<br>
+    If <span class="text-danger">No</span>, 
+    <a href="{% url 'register' %}?next=enroll_now" class="fw-bold text-primary text-decoration-none">
+        Please click here to register before enrolling in any course.
+    </a>.
+</div>
+{% endif %}
+
+
+        <!-- Success Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Enrollment Form -->
+        <form method="post" action="" novalidate>
+            {% csrf_token %}
+
+            <!-- Full Name -->
+            <div class="form-group mb-3">
+                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                {{ form.full_name }}
+                {% for error in form.full_name.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Email -->
+            <div class="form-group mb-3">
+                <label for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% for error in form.email.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Program -->
+            <div class="form-group mb-3">
+                <label for="{{ form.program.id_for_label }}">Program Chosen</label>
+                {{ form.program }}
+                {% for error in form.program.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Course -->
+            <div class="form-group mb-3">
+                <label for="{{ form.course.id_for_label }}">Course Enrolled For</label>
+                {{ form.course }}
+                {% for error in form.course.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Class Type -->
+            <div class="form-group mb-4">
+                <label for="{{ form.class_type.id_for_label }}">Preferred Class</label>
+                {{ form.class_type }}
+                {% for error in form.class_type.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary w-100">Submit Enrollment</button>
+        </form>
+
+        <!-- Logout Button -->
+        <form action="{% url 'logout' %}" method="post" class="mt-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

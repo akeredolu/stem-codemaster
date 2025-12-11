@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block show_footer %}
+  {% with show=False %}{% endwith %}
+{% endblock %}
+
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Enrollment Received</h2>
+    <p>Thank you, {{ enrollment.full_name }}! We have received your enrollment details.</p>
+    <p>To complete your enrollment, please pay a one-time non-refundable fee of <strong>₦2,500</strong>.</p>
+
+    <h4>Choose a Payment Method:</h4>
+
+    <!-- Paystack Button -->
+    <a href="{% url 'enrolment_payment_request' enrollment.id %}" class="btn btn-success mb-3">
+        Pay Online via Paystack
+    </a>
+
+    <!-- Bank Transfer Option -->
+    <div class="card p-3">
+        <h5><b>Bank Transfer Details:</b></h5>
+        <p><strong>Bank Name:</strong> {{ bank_details.bank_name }}</p>
+        <p><strong>Account Name:</strong> {{ bank_details.account_name }}</p>
+        <p><strong>Account Number:</strong> {{ bank_details.account_number }}</p>
+        <p>After transfer, please upload proof below:</p>
+        <form method="post" action="{% url 'upload_bank_payment_proof' enrollment.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_proof">Upload Payment Proof</label>
+                <input type="file" name="proof_of_payment" id="id_proof" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload Proof</button>
+        </form>
+
+         <!-- Logout Button -->
+        <form action="{% url 'logout' %}" method="post" class="mt-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+

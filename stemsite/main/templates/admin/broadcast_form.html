@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+  <h1>📢 Broadcast Message to All Students</h1>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Send Message" class="default">
+  </form>
+  <p><a href="{% url 'admin:main_adminmessage_changelist' %}">← Back to Messages</a></p>
+{% endblock %}
+

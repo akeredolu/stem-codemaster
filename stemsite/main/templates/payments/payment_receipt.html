@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow p-4">
+        <h3>Payment Submitted</h3>
+        <p><strong>Course:</strong> {{ payment.course.title }}</p>
+        <p><strong>Amount:</strong> ₦{{ payment.amount_paid }}</p>
+        <p><strong>Reference:</strong> {{ payment.reference }}</p>
+        <p><strong>Session Option:</strong> {{ payment.session_option|title }}</p>
+
+        <p><strong>Status:</strong> 
+            {% if payment.is_verified %}
+                ✅ Confirmed
+            {% else %}
+                ⏳ Awaiting Admin Confirmation
+            {% endif %}
+        </p>
+        <hr>
+        <p>A confirmation email has been sent. You will be notified once admin approves your payment.</p>
+        <a href="{% url 'portal' %}" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+</div>
+{% endblock %}
+

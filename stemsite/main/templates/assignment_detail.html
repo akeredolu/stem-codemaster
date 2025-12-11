@@ -1,0 +1,29 @@
+
+<h2>{{ assignment.title }}</h2>
+<p><strong>Course:</strong> {{ assignment.course.title }}</p>
+<p><strong>Instructions:</strong> {{ assignment.instructions|linebreaks }}</p>
+<p><strong>Due Date:</strong> {{ assignment.due_date|date:"D, M d, Y" }}</p>
+
+<hr>
+
+{% if submission %}
+  <h4>Your Submission:</h4>
+  <p>Submitted on: {{ submission.submitted_at|date:"D, M d, Y H:i" }}</p>
+  <p><a href="{{ submission.file.url }}">Download Your Submission</a></p>
+
+  {% if submission.correction_file %}
+    <h4>Admin Feedback:</h4>
+    <p><a href="{{ submission.correction_file.url }}">Download Corrected File</a></p>
+  {% endif %}
+
+  {% if submission.feedback_comments %}
+    <p><strong>Feedback:</strong> {{ submission.feedback_comments }}</p>
+  {% endif %}
+{% else %}
+  <h4>Submit Your Work</h4>
+  <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Submit Assignment</button>
+  </form>
+{% endif %}

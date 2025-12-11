@@ -1,0 +1,60 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Chat Inbox{% endblock %}
+
+{% block content %}
+<h1>Chat Inbox</h1>
+
+<p>Status: Admin is <strong style="color:green;">Online</strong></p>
+
+<table style="width:100%; border-collapse: collapse; margin-top:20px;">
+    <thead>
+        <tr style="background:#f0f0f0; text-align:left;">
+            <th style="padding:8px; border:1px solid #ddd;">Room Name</th>
+            <th style="padding:8px; border:1px solid #ddd;">Participants</th>
+            <th style="padding:8px; border:1px solid #ddd;">Last Message</th>
+            <th style="padding:8px; border:1px solid #ddd;">Timestamp</th>
+            <th style="padding:8px; border:1px solid #ddd;">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for room in rooms %}
+            {% with last_msg=room.messages.last %}
+            <tr style="{% if last_msg and not last_msg.is_read and last_msg.sender.username != admin_username %}font-weight:bold;{% endif %}">
+                <td style="padding:8px; border:1px solid #ddd;">{{ room.name }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">
+                    {% for user in room.participants.all %}
+                        {{ user.username }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        Guest
+                    {% endfor %}
+                </td>
+                <td style="padding:8px; border:1px solid #ddd;">
+                    {% if last_msg %}
+                        {{ last_msg.content|truncatechars:50 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="padding:8px; border:1px solid #ddd;">
+                    {% if last_msg %}
+                        {{ last_msg.timestamp|date:"H:i, M d" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="padding:8px; border:1px solid #ddd;">
+                    <a href="{% url 'admin_reply_chat' room.name %}" class="button" target="_blank">Reply</a>
+                </td>
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr>
+                <td colspan="5" style="padding:8px; border:1px solid #ddd;">No chat rooms yet.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+

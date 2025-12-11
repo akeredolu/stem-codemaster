@@ -1,0 +1,936 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load string_filters %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Stem CodeMaster</title>
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+
+  <!-- Favicons -->
+ <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+  <link href="{% static 'assets/img/apple-touch-icon.png' %}" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+ 
+
+  <!-- Vendor CSS Files -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet"> 
+
+  <!-- Main CSS File -->
+  <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
+  <link href="{% static 'assets/css/main2.css' %}" rel="stylesheet">
+
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="fixed-top d-none"></header>
+
+
+ {% if messages %}
+  <div id="message-container" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;">
+    {% for message in messages %}
+      <div class="alert alert-success alert-dismissible fade show" id="auto-dismiss-msg" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
+ {% if request.path == '/' %}
+
+  <header id="header" class="header d-flex align-items-center fixed-top">
+    <div class="container position-relative d-flex align-items-center justify-content-between">
+
+      <a href="{% url 'home' %}" class="logo d-flex align-items-center me-auto me-xl-0">
+        <!-- Uncomment the line below if you also wish to use an image logo -->
+       <!-- <img src="{% static 'assets/img/logo2.png' %}" alt="">-->
+        <h1 class="sitename">Stem CodeMaster</h1>
+      </a>
+
+  <nav id="navmenu" class="navmenu">
+  <ul>
+    <li><a href="{% url 'home' %}" class="active">Home</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#programs">Programs</a></li>
+    <li><a href="#courses">Courses</a></li>
+    <li><a href="#Classes-and-Fees">Classes and Fees</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="{% url 'portal' %}">Portal</a></li>
+  </ul>
+  <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+</nav>
+
+      <!--<a class="cta-btn" href="#about">Get Started</a>-->
+
+</div>
+</header>
+{% endif %}
+
+<main class="main">
+	
+{% block content %}
+
+<!-- Hero Section -->
+<section id="hero"  class="hero section dark-background position-relative">
+
+<!-- Fullscreen background image -->
+  <img src="{% static 'assets/img/hero.jpg' %}" alt="STEM CodeMaster Hero Image" class="img-fluid w-100" data-aos="fade-in">
+
+<!-- Centralized content block -->
+<div class="container text-center text-white d-flex flex-column justify-content-center align-items-center position-absolute top-50 start-50 translate-middle" style="z-index: 2;">
+    
+<h3 class="lead mt-3" data-aos="fade-up" data-aos-delay="200">
+  A vibrant online school teaching <strong>coding</strong>, <strong>programming</strong>, and <strong>robotics</strong> to kids and teens worldwide.
+</h3>
+
+<p class="mt-2" data-aos="fade-up" data-aos-delay="300">
+  We ignite creativity and innovation through hands-on, engaging learning experiences that build real-world tech skills.
+</p>
+
+<p class="lead mt-3" data-aos="fade-up" data-aos-delay="400">
+  Our mission is to equip the next generation with the skills to thrive in a tech-driven future.
+</p>
+
+<!-- Typing animation -->
+    <h2 class="mt-4">
+      <span id="typed"></span>
+    </h2>
+
+ <!-- CTA Buttons -->
+<div class="mt-4 text-center d-flex justify-content-center gap-3 flex-wrap">
+  <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">🚀 Get Started</a>
+  <a href="{% url 'enroll_now' %}" class="btn btn-outline-light btn-lg">📩 Join Now</a>
+</div>
+</div>
+
+</section>
+
+<!-- /Hero Section -->
+    
+    <!-- About Section -->
+<!-- About Section -->
+<section id="about" class="about section">
+  <div class="container section-title" data-aos="fade-up">
+    <h2>{{ about.title }}</h2>
+    <p style="text-align: justify;">{{ about.main_text }}</p>
+  </div>
+
+  <div class="container">
+    <div class="row gy-4">
+
+      <div class="col-lg-6 content" data-aos="fade-up" data-aos-delay="100">
+        <h4>Who We Are</h4>
+        <p style="text-align: justify;">{{ about.who_we_are }}</p>
+      </div>
+
+      <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+        <h4>What We Do</h4>
+        <p style="text-align: justify;">{{ about.what_we_do }}</p>
+        <a href="{% url 'register' %}" class="read-more">
+          <span>Register Now!</span><i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+    
+<!-- /About Section -->
+    <hr/>
+
+<!-- Programs Section -->
+<!-- Programs Section -->
+<section id="programs" class="py-5 bg-light">
+  <div class="container section-title" data-aos="fade-up">
+
+    <!-- Dynamic Section Title -->
+    <div class="text-left mb-5" data-aos="fade-up">
+      <h2><strong>Programs</strong></h2>
+
+      <p class="text-justify">
+        {{ program_intro.intro1 }}
+      </p>
+
+      <p class="text-justify" data-aos="fade-up" data-aos-delay="100">
+        {{ program_intro.intro2 }}
+      </p>
+    </div>
+
+    <!-- Dynamic Program Cards -->
+    <div class="row g-4">
+      {% for program in programs %}
+      <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter }}00">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+
+            <h5 class="card-title" style="text-align: center;">{{ program.title }}</h5>
+
+            <p class="card-text text-justify">
+              <strong>Description:</strong> {{ program.description }}
+            </p>
+
+            <br />
+            <h6>Key Features</h6>
+            <ul>
+              {% for feature in program.feature_list %}
+              <li>{{ feature }}</li>
+              {% endfor %}
+            </ul>
+
+            <h6>Mode of Delivery</h6>
+            <p class="text-justify">{{ program.mode_of_delivery }}</p>
+
+            <br />
+            <h6>Class Size</h6>
+            <p>{{ program.class_size }}</p>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+
+<!--End of Program Section-->
+
+<!-- Stats Section -->
+    <section id="stats" class="stats section dark-background">
+
+      <img src="{% static 'assets/img/stats-bg.jpg' %}" alt="" data-aos="fade-in">
+
+      <div class="container position-relative" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="subheading">
+          <h3>What we have achieved so far</h3>
+          <p style="text-align: justify;">
+            We have achieved the following within a short period with our highly qualify instructors with extensive expertise and real-world experience in coding, programming, and robotics. 
+          </p>
+        </div>
+
+        <div class="row gy-4">
+
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="9" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Impactful Programs</p>
+            </div>
+          </div><!-- End Stats Item -->
+
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="28" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Projects</p>
+            </div>
+          </div><!-- End Stats Item -->
+
+          <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="185" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Hours Of Support</p>
+            </div>
+        </div><!-- End Stats Item -->
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-item text-center w-100 h-100">
+              <span data-purecounter-start="0" data-purecounter-end="26" data-purecounter-duration="1" class="purecounter"></span>
+              <p>Enrollments</p>
+            </div>
+        </div><!-- End Stats Item -->
+
+        </div>
+
+      </div>
+
+    </section>
+
+<!-- End of Stats Section -->
+
+<!-- Courses Section Begins-->
+     <section id="courses" class="courses section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Courses</h2>
+      
+      </div><!-- End Section Title -->
+
+<!-- Enrol Now! Button Begins Here! -->
+      
+<div style="text-align: center; padding: 20px; background-color: #555;">
+  <a href="{% url 'enroll_now' %}" style="text-decoration: none;">
+    <button style="background-color: #ff9800; color: white; border: none; padding: 12px 24px; font-size: 18px; border-radius: 6px; cursor: pointer; transition: background-color 0.3s;">
+      Enrol Now!
+    </button>
+  </a>
+</div>
+
+<!--End of Enrol Now! Button-->
+
+
+<!--Courses Listing Section Start Here-->
+<section id="courses" class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5" data-aos="fade-up">
+      <h2 class="fw-bold">Our Courses</h2>
+      <p class="text-muted">
+        Explore our collection of hands‑on coding, robotics and programming courses designed for all ages and skill levels.
+      </p>
+    </div>
+    <div class="row g-4">
+      {% for course in courses %}
+      <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="{{ forloop.counter }}00">
+        <div class="card h-100 shadow-sm">
+          {% if course.image %}
+          <img src="{{ course.image.url }}" class="card-img-top" alt="{{ course.title }}">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title text-center">{{ course.title }}</h5>
+            <p style="text-align: justify;">{{ course.description }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!--Courses Listing Section End Here-->
+
+  <!--Register Now! Link Div-->
+  <div>
+  <h4 style="text-align: center; padding: 20px; background-color:  #555; color: white;">
+  <a href="{% url 'register' %}" class="read-more"><span>Register Now!</span></a>
+  </div>
+  <!--Register Now! Div End...>
+  
+  <!-Call To Action Section Begins-->
+    <section id="call-to-action" class="call-to-action section dark-background">
+
+      <img src="{% static 'assets/img/cta-bg.jpg'%}" alt="">
+
+      <div class="container">
+
+        <div class="row" data-aos="zoom-in" data-aos-delay="100">
+          <div class="col-xl-9 text-center text-xl-start">
+            <h3>Enrol Now!</h3>
+            <p style="text-align: justify;">
+              Are you ready to empower yourself or your child with the essential skills of the 21st century?<br />
+              At STEM Codemaster, we offer a cutting-edge learning experience for children and youth passionate about Coding, Robotics, and Web Development.
+           </p>
+          </div>
+          <div class="col-xl-3 cta-btn-container text-center">
+            <a href="{% url 'enroll_now' %}"><strong>Enrol Now!</strong></a>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- /Call To Action Section -->
+
+  <!-- CLASSESS & FEES Section -->
+    <section id="Classes-and-Fees" class="Classes-and-Fees section">
+
+      <!-- Section Title -->
+      <div class="container section-title" data-aos="fade-up">
+        <h2>Classes and Fees</h2>
+        <p style="text-align: left;">
+          At Stem CodeMaster, we offer a variety of flexible classes tailored to fit different schedules and learning needs. Below is an overview of our classes and their respective fees.
+        </p>
+      </div><!-- End Section Title -->
+
+<!--courses and fee section begins-->
+<section class="class-fee-countainer">
+  {% for course in course_plans %}
+     <div class="column-1">
+    <div class="header text-center">
+      {{ course.get_class_type_display }}
+    </div>
+    <div class="content">
+      <p style="text-align: justify;"><strong>Description:</strong> {{ course.description }}</p>
+      <p><strong>Duration:</strong> {{ course.duration }}</p>
+      <table>
+        <tr>
+          <td>
+            <p><strong>Schedule:</strong></p>
+            <ul>
+              <li>{{ course.schedule_days }}</li>
+              <li><strong>Time Slots:</strong> 
+                <ul>
+                  {% for slot in course.time_slots|split_by_comma %}
+                    <li>{{ slot }}</li>
+                  {% endfor %}
+                </ul>
+              </li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li><strong>Fee per session:</strong> {{ course.fee_per_session }}</li>
+              <li><strong>Fee for bundle:</strong> {{ course.fee_for_bundle }}</li>
+            </ul>
+            <p><strong>Class Size:</strong> Maximum of {{ course.class_size }} students per class</p>
+          </td>
+        </tr>
+      </table>
+      <br/>
+      <h5>Discounts and Offers</h5>
+      <p>We offer special discounts for:</p>
+      <ul>
+        {% if course.discount_siblings %}
+          <li>Siblings Enrollments: 10% off for each additional sibling.</li>
+        {% endif %}
+        {% if course.discount_early %}
+          <li>Early Registrations: 5% discount for early payments before the class begins.</li>
+        {% endif %}
+        {% if course.discount_group %}
+          <li>Group Enrollments: Discounts available for groups of 5 or more.</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+
+</section>
+<!--courses and fee end-->
+
+
+<!-- Testimonials Carousel -->
+{% load static %}
+
+<section class="container my-2 pt-2">
+  <h3 class="text-center mb-4">What Parents and Students Are Saying About Us</h3>
+
+  <div class="swiper">
+    <div class="swiper-wrapper">
+      {% for t in testimonials %}
+        <div class="swiper-slide" data-aos="fade-up" data-aos-delay="100">
+          <div class="testimonial-slide">
+            {% if t.photo %}
+              <img src="{{ t.photo.url }}" class="testimonial-img" alt="{{ t.name }}">
+            {% else %}
+              <img src="{% static 'assets/img/default-user.jpg' %}" class="testimonial-img" alt="Default">
+            {% endif %}
+
+            <p class="text-muted fst-italic">"{{ t.comment }}"</p>
+            <div class="testimonial-name">{{ t.name }}</div>
+
+            {% if t.occupation %}
+              <div class="testimonial-occupation">{{ t.occupation }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Swiper Arrows -->
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+
+    <!-- Swiper Pagination -->
+    <div class="swiper-pagination"></div>
+  </div>
+</section>
+
+
+<!--Parents Testimonial section Ends-->
+
+<!--Contact Section-->
+<section id="contact" class="contact section light-background">
+  <div class="container section-title" data-aos="fade-up">
+    <h2>Contact</h2>
+    <p>Please, contact us for any clarification.</p>
+  </div>
+
+  <div class="container" data-aos="fade" data-aos-delay="100">
+    <div class="row gy-4">
+      <div class="col-lg-4">
+        <div class="info-item d-flex">
+          <i class="bi bi-geo-alt flex-shrink-0"></i>
+          <div>
+            <h3>Address</h3>
+            <p>Close D, Road 42, Off Day by Day, PW-Kubwa, Abuja</p>
+          </div>
+        </div>
+        <div class="info-item d-flex">
+          <i class="bi bi-telephone flex-shrink-0"></i>
+          <div>
+            <h3>Call Us</h3>
+            <p>+234 803 752 3826</p>
+          </div>
+        </div>
+        <div class="info-item d-flex">
+          <i class="bi bi-envelope flex-shrink-0"></i>
+          <div>
+            <h3>Email Us</h3>
+            <p>code247.me@gmail.com</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+       
+
+        <form method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
+          {% csrf_token %}
+          <div class="row gy-4">
+            <div class="col-md-6">
+              {{ form.name|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+              {{ form.email|as_crispy_field }}
+            </div>
+            <div class="col-md-12">
+              {{ form.subject|as_crispy_field }}
+            </div>
+            <div class="col-md-12">
+              {{ form.message|as_crispy_field }}
+            </div>
+            <div class="col-md-12 text-center">
+              <button type="submit">Send Message</button>
+            </div>
+          </div>
+        </form>
+        </div>
+
+    </div>
+  </div>
+</section>
+
+    <!-- /Contact Section -->
+
+
+{% endblock %}
+
+</main>
+
+  {% if request.path == '/' %}
+
+  <footer id="footer" class="footer dark-background">
+
+ <div class="container text-center text-md-start">
+    <div class="row">
+
+      <!-- Logo and Motto -->
+      <div class="col-md-4 col-lg-4 col-xl-3 mx-auto mb-4">
+        <h4 class="fw-bold text-uppercase sitename">Stem CodeMaster</h4>
+        <p>Empowering Young Minds Through STEM education, coding, and robotics training for the future.</p>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
+        <h5 class="text-uppercase fw-bold mb-3">Quick Links</h5>
+        <ul class="list-unstyled">
+          <li><a href="{% url 'home' %}" class="text-white text-decoration-none">Home</a></li>
+          <li><a href="{% url 'enroll_now' %}" class="text-white text-decoration-none">Enrol-Now!</a></li>
+          <li><a href="{% url 'register' %}" class="text-white text-decoration-none">Register</a></li>
+          <li><a href="{% url 'portal' %}" class="text-white text-decoration-none">Portal</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="col-md-5 col-lg-4 col-xl-3 mx-auto mb-md-0 mb-4">
+        <h5 class="text-uppercase fw-bold mb-3">Contact</h5>
+        <p><i class="bi bi-geo-alt-fill me-2"></i>Close D, Road 42, Off Day by Day, PW-Kubwa, Abuja</p>
+        <p><i class="bi bi-envelope-fill me-2"></i>info@stemcodemaster.com</p>
+        <p><i class="bi bi-phone-fill me-2"></i>+234 803 752 3826</p>
+      </div>
+
+    </div>
+
+    <!-- Social Media -->
+    <div class="text-center mt-4">
+      <a href="#" class="text-white mx-2"><i class="bi bi-twitter-x"></i></a>
+      <a href="#" class="text-white mx-2"><i class="bi bi-facebook"></i></a>
+      <a href="#" class="text-white mx-2"><i class="bi bi-instagram"></i></a>
+      <a href="#" class="text-white mx-2"><i class="bi bi-whatsapp"></i></a>
+      <a href="#" class="text-white mx-2"><i class="bi bi-linkedin"></i></a>
+    </div>
+
+    <!-- Copyright -->
+<hr class="my-4 border-light">
+<div class="d-md-flex justify-content-between align-items-center">
+  <div class="text-center text-md-start mb-2 mb-md-0">
+   © {{ now|date:"Y" }} <strong class="sitename me-1">Stem CodeMaster</strong>. All Rights Reserved.
+  </div>
+  <div class="text-center text-md-end">
+    <span class="ms-md-2">Designed by 💡<a href="#" class="text-white text-decoration-underline ms-1">Akeredolu, Waheed Adedayo</a></span>
+  </div>
+</div>
+
+
+  </footer>
+ {% endif %}
+ 
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader"></div>
+
+  <!-- Vendor JS Files -->
+
+  <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/aos/aos.js' %}"></script>
+  <script src="{% static 'assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+  <script src="{% static 'assets/vendor/imagesloaded/imagesloaded.pkgd.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/isotope-layout/isotope.pkgd.min.js' %}"></script>
+  <script src="{% static 'assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+
+ <script src="{% static 'assets/vendor/typed/typed.min.js' %}"></script>
+
+ <script>
+  AOS.init();
+</script>
+
+  <!-- Main JS File -->
+  <script src="{% static 'assets/js/main.js' %}"></script>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const msg = document.getElementById("auto-dismiss-msg");
+    if (msg) {
+      setTimeout(() => {
+        msg.classList.remove("show");
+        msg.classList.add("fade");
+        setTimeout(() => msg.remove(), 1000);
+      }, 3000); // 3 seconds
+    }
+  });
+</script>
+
+<!-- Typed.js Script -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const typedElement = document.getElementById("typed");
+    if (typedElement) {
+      new Typed("#typed", {
+        strings: [
+          "Welcome to STEM CodeMaster",
+          "Where Kids Become Tech Creators.",
+          "Learn to Code. Build Robots. Innovate.",
+          "From Zero to Tech Hero — We Make It Possible.",
+          "Empowering Young Minds Through Coding, Programming & Robotics.",
+          "Fueling Creativity with the Power of Technology!"
+        ],
+        typeSpeed: 50,
+        backSpeed: 30,
+        backDelay: 1500,
+        smartBackspace: true,
+        showCursor: true,
+        cursorChar: "|",
+        loop: true
+      });
+    }
+  });
+</script>
+
+<!--WebSocket JS-->
+
+<!---Testimonial section scripts-->
+<!-- Swiper Initialization -->
+<script>
+  var swiper = new Swiper('.swiper', {
+    slidesPerView: 1, // Mobile default
+    spaceBetween: 20,
+    loop: true,
+    autoplay: {
+      delay: 3500,
+      disableOnInteraction: false,
+    },
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+
+    // Responsive breakpoints
+    breakpoints: {
+      768: {
+        slidesPerView: 2, // Tablet
+      },
+      1024: {
+        slidesPerView: 3, // Desktop
+      },
+    },
+  });
+</script>
+
+
+
+<!-- Guest Floating Chat UI -->
+<!-- Floating Chat Widget -->
+<div id="chat-container" class="chat-small">
+    <!-- Toggle Bubble -->
+    <div id="chat-toggle" class="chat-bubble">Need Help?</div>
+
+    <!-- Chat Panel -->
+    <div id="chat-panel" class="chat-panel hidden">
+        <div class="chat-header">
+            <span>Chat with Admin</span>
+            <span id="admin-status">● Offline</span>
+            <span id="chat-close" class="chat-close">&times;</span>
+        </div>
+
+        <div id="chat-log" class="chat-log"></div>
+
+        <form id="chat-form" class="chat-footer">
+            <input id="chat-message-input" type="text" placeholder="Type a message..." />
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="chat-phone">
+            Call Admin: +234 80XX XXX XXX
+        </div>
+    </div>
+</div>
+
+<!-- End of Guest Floating Chat UI -->
+
+<style>
+ #chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-family: Arial, sans-serif;
+    z-index: 9999;
+}
+
+/* Small Bubble */
+.chat-bubble {
+    background: #007BFF;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.chat-bubble:hover {
+    transform: scale(1.05);
+}
+
+/* Chat Panel */
+.chat-panel {
+    width: 350px;
+    max-height: 450px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.hidden { display: none; }
+
+/* Header */
+.chat-header {
+    background: #007BFF;
+    color: #fff;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Close */
+.chat-close {
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* Messages */
+.chat-log {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f5f5f5;
+}
+
+.chat-message {
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: 12px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* Message Colors */
+.chat-message.sent { background: #007BFF; color: #fff; align-self: flex-end; }
+.chat-message.admin { background: #e0e0e0; color: #333; align-self: flex-start; }
+.chat-message.guest { background: #28a745; color: #fff; align-self: flex-start; }
+
+/* Footer */
+.chat-footer {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.chat-footer input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+}
+
+.chat-footer button {
+    padding: 8px 12px;
+    background: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Phone */
+.chat-phone {
+    padding: 8px 10px;
+    font-size: 14px;
+    background: #f0f0f0;
+    text-align: center;
+}
+
+</style>
+
+<!--Guest Floating UI JS-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chatToggle = document.getElementById("chat-toggle");
+    const chatPanel = document.getElementById("chat-panel");
+    const chatClose = document.getElementById("chat-close");
+    const chatLog = document.getElementById("chat-log");
+    const chatForm = document.getElementById("chat-form");
+    const chatInput = document.getElementById("chat-message-input");
+    const adminStatusEl = document.getElementById("admin-status");
+
+    /* -------------------------
+       Toggle chat panel
+    ------------------------- */
+    chatToggle.addEventListener("click", () => chatPanel.classList.toggle("hidden"));
+    chatClose.addEventListener("click", () => chatPanel.classList.add("hidden"));
+
+    /* -------------------------
+       Identify user type
+    ------------------------- */
+    const userType = "{{ user.is_authenticated|yesno:'student,guest' }}";
+    const username = userType === "student" ? "{{ user.username }}" : "{{ guest_id }}";
+
+    /* -------------------------
+       WebSocket connection
+    ------------------------- */
+    const roomName = `${username}_admin`;
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/chat/${roomName}/`);
+
+    /* -------------------------
+       Append chat message
+    ------------------------- */
+    function appendMessage(sender, message) {
+    const msgEl = document.createElement("div");
+    msgEl.classList.add("chat-message");
+
+    if (sender === username) {
+        msgEl.classList.add("sent");
+        msgEl.textContent = `You: ${message}`;
+    } else if (sender === "admin") {
+        msgEl.classList.add("admin");
+        msgEl.textContent = `Admin: ${message}`;
+    } else {
+        msgEl.classList.add("guest");
+        msgEl.textContent = `${sender}: ${message}`;
+    }
+
+    chatLog.appendChild(msgEl);     // ✔ FIXED
+    chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+
+    /* -------------------------
+       Receive WebSocket messages
+    ------------------------- */
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // 🔥 FIX #3 — update admin online/offline status
+        if (data.type === "admin_status") {
+            if (data.online === true) {
+                adminStatusEl.innerHTML = '<span style="color:#0f0;">● Online</span>';
+            } else {
+                adminStatusEl.innerHTML = '<span style="color:#f00;">● Offline</span>';
+            }
+            return;
+        }
+
+        // 🔥 FIX #1 — prevent duplicate messages
+        if (data.sender === username) {
+            return; // We already displayed it locally
+        }
+
+        if (data.message && data.sender) {
+            appendMessage(data.sender, data.message);
+        }
+    };
+
+    chatSocket.onclose = () => {
+        adminStatusEl.innerHTML = '<span style="color:#f00;">● Offline</span>';
+    };
+
+    /* -------------------------
+       Send message
+    ------------------------- */
+    chatForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Send message
+        chatSocket.send(JSON.stringify({
+            message: message,
+            sender_type: userType,
+            sender: username
+        }));
+
+        // Display instantly (not waiting for server echo)
+        appendMessage(username, message);
+
+        chatInput.value = "";
+    });
+});
+</script>
+
+
+<!--End of Guest Floating Help Button -->
+
+</body>
+</html>

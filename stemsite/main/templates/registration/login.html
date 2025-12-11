@@ -1,0 +1,50 @@
+<!-- templates/registration/login.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | STEM Codemaster</title>
+    <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="login-container">
+        <div class="form-wrapper">
+            <h2>Welcome Back</h2>
+            <p class="sub-text">Login to your account to continue</p>
+            {% if form.errors %}
+                <div class="error-msg">
+                    Invalid username or password. Please try again.
+                </div>
+            {% endif %}
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <label for="username">Username or Email</label>
+                {{ form.username }}
+                
+                <label for="password">Password</label>
+                {{ form.password }}
+
+                <button type="submit">Login</button>
+            </form>
+            <div class="bottom-links">
+                <p><a href="{% url 'password_reset' %}">Forgot password?</a></p>
+                <p>Don’t have an account? <a href="{% url 'register' %}">Register Now</a></p>
+            </div>
+
+ <!-- Logout Button -->
+        <form action="{% url 'logout' %}" method="post" class="mt-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
+        </form>
+
+        </div>
+    </div>
+    
+</body>
+</html>
+

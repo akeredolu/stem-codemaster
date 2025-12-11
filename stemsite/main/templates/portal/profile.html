@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% load schedule_extras %}
+
+
+{% load static crispy_forms_tags %}
+
+{% load dict_extras %}
+
+{% block hide_navbar %}{% with hide_navbar=True %}{% endwith %}{% endblock %}
+{% block show_footer %}{% with show=False %}{% endwith %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold display-5">Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+    <p class="text-muted fs-5">Here's your personal dashboard to access courses, materials, and more.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left column -->
+    <div class="col-lg-4">
+      <!-- Profile Card -->
+      <div class="card border-0 shadow rounded-4 mb-4 text-center">
+        <div class="card-body">
+          <img src="{{ user.profile.image.url }}" alt="Profile" class="rounded-circle shadow mb-3" style="width:120px; height:120px; object-fit:cover;">
+          <h5 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h5>
+          <p class="text-muted small mb-0">{{ user.email }}</p>
+          <p class="text-muted small">Joined {{ user.date_joined|date:"F j, Y" }}</p>
+          <div class="d-grid gap-2 mt-3">
+            <a href="{% url 'change_profile' %}" class="btn btn-outline-primary btn-sm">Edit Profile</a>
+            <a href="{% url 'password_change' %}" class="btn btn-outline-secondary btn-sm">Change Password</a>
+            <a href="{% url 'home' %}" class="btn btn-outline-danger btn-sm">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="card border-0 shadow rounded-4 mb-4">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">🔔 Notifications</h6>
+          <ul class="list-unstyled small">
+            {% for note in notifications %}
+              
+<li class="mb-2">
+    <span class="badge bg-info me-1">{{ note.category }}</span> {{ note.message }}<br>
+    <small class="text-muted">
+        {% if note.created_at|timesince %}
+            {{ note.created_at|timesince }} ago
+        {% else %}
+            just now
+        {% endif %}
+    </small>
+</li>
+
+
+            {% empty %}
+              <li class="text-muted">No new notifications.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Complaint Form -->
+      <div class="card border-0 shadow rounded-4 mb-3">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">🚨 Report an Issue</h6>
+          <form method="post" action="{% url 'submit_complaint' %}">
+            {% csrf_token %}
+            {{ complaint_form|crispy }}
+            <button type="submit" class="btn btn-warning btn-sm w-100 mt-2">Submit Your Issue Here!</button>
+          </form>
+        </div>
+      </div>
+
+     
+ <!-- Complaint List -->
+<div class="card border-0 shadow rounded-4">
+  <div class="card-body">
+    <h6 class="fw-bold mb-3">📨 My Submitted Complaints</h6>
+    {% if complaints.exists %}
+      <ul class="list-group">
+        {% for complaint in complaints %}
+          <li class="list-group-item">
+            <strong>{{ complaint.created_at|date:"M j, Y - H:i" }}</strong><br>
+            {{ complaint.message|linebreaks }}
+            <span class="badge bg-secondary float-end mt-1">{{ complaint.status|capfirst }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-muted">You haven’t submitted any complaints yet.</p>
+    {% endif %}
+  </div>
+</div>
+</div>
+    
+
+    <!-- Right column -->
+ <!-- Right column -->
+<div class="col-lg-8">
+  <!-- Tab buttons -->
+  <ul class="nav nav-tabs mb-4 flex-nowrap overflow-auto" id="dashboardTabs" role="tablist" style="white-space: nowrap;">
+    <li class="nav-item">
+      <button class="nav-link active" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses" type="button" role="tab" aria-controls="courses" aria-selected="true">📚 Courses</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials" type="button" role="tab" aria-controls="materials" aria-selected="false">📄 Materials</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="live-tab" data-bs-toggle="tab" data-bs-target="#live" type="button" role="tab" aria-controls="live" aria-selected="false">🎥 Live Sessions</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab" aria-controls="assignments" aria-selected="false">✏️ Assignments</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab" aria-controls="schedule" aria-selected="false">🗓 Schedule</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="timetable-tab" data-bs-toggle="tab" data-bs-target="#timetable" type="button" role="tab" aria-controls="timetable" aria-selected="false">🧑‍🏫 Class Timetable</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" id="messages-tab" data-bs-toggle="tab" data-bs-target="#messages" type="button" role="tab" aria-controls="messages" aria-selected="false">📩 Admin Messages</button>
+    </li>
+  </ul>
+
+  <!-- Tab panes -->
+  <div class="tab-content" id="dashboardTabsContent">
+
+    <!-- Courses Tab (default active) -->
+    <div class="tab-pane fade show active" id="courses" role="tabpanel" aria-labelledby="courses-tab">
+      {% if enrolled_courses %}
+        {% for enrollment in enrolled_courses %}
+          <div class="mb-4">
+            <div class="course-card p-3 border rounded shadow-sm">
+              <p><strong>Course:</strong> {{ enrollment.course.title }}</p>
+              
+              <p><strong>Program:</strong> {{ enrollment.program }}</p>
+              <p><strong>Class Type:</strong> {{ enrollment.class_type|default:"TBA" }}</p>
+              <p><strong>Enrolled On:</strong> {{ enrollment.submitted_at|date:'M d, Y' }}</p>
+              <p><strong>Instructor:</strong> 
+                 {% if enrollment.course.instructor %}
+                    {{ enrollment.course.instructor.get_full_name }}
+                 {% else %}
+                    To be Announce
+                 {% endif %}
+              </p>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">You are not enrolled in any courses yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Materials Tab -->
+    <div class="tab-pane fade" id="materials" role="tabpanel" aria-labelledby="materials-tab">
+      <!-- Search Input + Loader -->
+      <div class="mb-3" style="max-width: 400px;">
+        <div class="input-group">
+          <input type="text" class="form-control" id="materialSearch" placeholder="Search materials...">
+          <button class="btn btn-outline-primary" id="searchButton">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+        <div id="searchLoader" class="text-muted d-none mt-2">
+          <i class="bi bi-hourglass-split"></i> Searching...
+        </div>
+        <p id="noResultsMessage" class="text-muted d-none mt-2">No materials found for your search.</p>
+      </div>
+
+      <!-- Materials List -->
+      {% if materials %}
+        {% regroup materials by course.title as course_groups %}
+        {% for group in course_groups %}
+          <div class="mb-4" data-course-title="{{ group.grouper|lower }}">
+            <h5 class="text-primary mb-2">{{ group.grouper }}</h5>
+            <ul class="list-group">
+              {% for material in group.list %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="flex-fill me-3">
+                    📄 <strong>{{ material.title }}</strong><br>
+                    <small class="text-muted">{{ material.course.title }} • {{ material.uploaded_at|date:"M d, Y" }}</small>
+
+                    {% if material.file %}
+                      <div class="mt-2">
+                        {% if material.file_type == 'pdf' %}
+                          <iframe src="{{ material.file.url }}" width="100%" height="400px" class="mt-2 border rounded"></iframe>
+                        {% elif material.file_type == 'video' %}
+                          <video width="100%" controls class="mt-2">
+                            <source src="{{ material.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                          </video>
+                        {% elif material.file_type == 'docx' %}
+                          <p class="mt-2">📘 Word Document (download below)</p>
+                        {% elif material.file_type == 'zip' %}
+                          <p class="mt-2">🗜️ Compressed File (download below)</p>
+                        {% else %}
+                          <p class="mt-2">📄 File (download below)</p>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if material.file %}
+                    <a href="{{ material.file.url }}" download class="btn btn-sm btn-outline-primary ms-2">Download</a>
+                  {% else %}
+                    <span class="text-muted ms-2">No file</span>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">No course materials available.</p>
+      {% endif %}
+    </div>
+
+    
+<!-- Live Sessions Tab -->
+<div class="tab-pane fade" id="live" role="tabpanel" aria-labelledby="live-tab">
+  <h6 class="fw-bold mb-3">Live Sessions</h6>
+
+  {% if live_sessions %}
+    <div class="row g-3">
+      {% for session in live_sessions %}
+        <div class="col-12 col-md-6">
+          <div class="card shadow-sm h-100 session-card" style="transition: transform 0.2s;">
+            <div class="card-body d-flex flex-column">
+              <div class="mb-2 d-flex justify-content-between align-items-center">
+                <strong>{{ session.title }}</strong>
+
+                {% if session.start_time <= now %}
+                  {% if session.end_time %}
+                    {% if session.end_time >= now %}
+                      <span class="badge bg-success">Live Now</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Ended</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge bg-success">Live Now</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-warning text-dark">Upcoming</span>
+                {% endif %}
+              </div>
+
+              <p class="mb-1 text-muted">
+                {{ session.start_time|date:"M d, Y H:i" }}
+                {% if session.end_time %}
+                  - {{ session.end_time|date:"H:i" }}
+                {% endif %}
+              </p>
+
+              <p class="mb-2"><em>{{ session.course.title }}</em></p>
+
+              <a href="{{ session.link }}" target="_blank" class="btn btn-sm btn-primary mt-auto">Join Session</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No scheduled sessions.</p>
+  {% endif %}
+</div>
+
+
+               <!-- Assignments Tab -->
+<div class="tab-pane fade" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
+  <h4 class="mt-3">My Assignments</h4>
+
+  {% if assignments %}
+    <div class="list-group">
+      {% for assignment in assignments %}
+        <div class="list-group-item">
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">{{ assignment.title }}</h5>
+            <small class="{% if assignment.due_date < now %}text-danger{% else %}text-muted{% endif %}">
+              Due: {{ assignment.due_date|date:"M d, Y" }}
+            </small>
+          </div>
+          <p class="mb-1">{{ assignment.instructions }}</p>
+
+          {% if assignment.file %}
+            <a href="{{ assignment.file.url }}" class="btn btn-sm btn-outline-primary" download>
+              Download Assignment
+            </a>
+          {% endif %}
+
+          <hr>
+
+          {% if submission_map|get_item:assignment.id %}
+            {% with sub=submission_map|get_item:assignment.id %}
+              <p class="text-success mb-0">✅ Submitted on {{ sub.submitted_at|date:"M d, Y H:i" }}</p>
+              {% if sub.file %}
+                <a href="{{ sub.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                  View Submission
+                </a>
+              {% endif %}
+            {% endwith %}
+          {% else %}
+            <form action="{% url 'submit_assignment' assignment.id %}" method="post" enctype="multipart/form-data" class="mt-2">
+              {% csrf_token %}
+              <div class="mb-2">
+                <input type="file" name="file" class="form-control" required>
+              </div>
+              <button type="submit" class="btn btn-sm btn-success">Submit Assignment</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No assignments have been posted for your courses yet.</p>
+  {% endif %}
+
+<p>Assignments count: {{ assignments|length }}</p>
+<ul>
+{% for a in assignments %}
+    <li>{{ a.title }}</li>
+{% endfor %}
+</ul>
+
+</div>
+
+<!-- 🗓 Schedule Tab -->
+<div class="tab-pane fade" id="schedule" role="tabpanel">
+  {% if schedule %}
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr><th>Date</th><th>Course</th><th>Time</th><th>Instructor</th><th>Join</th></tr>
+      </thead>
+      <tbody>
+        {% for item in schedule %}
+          <tr>
+            <td>{{ item.date|date:"D, M d, Y" }}</td>
+            <td>{{ item.course.title }}</td>
+            <td>{{ item.start_time|time:"H:i" }} - {{ item.end_time|time:"H:i" }}</td>
+            <td>{{ item.instructor }}</td>
+            <td>
+              {% if item.join_link %}
+                <a href="{{ item.join_link }}" target="_blank" class="text-primary">Join</a>
+              {% else %} N/A {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No schedule set yet.</p>
+  {% endif %}
+</div>
+
+
+<!-- 🧑‍🏫 Timetable Tab -->
+<div class="tab-pane fade" id="timetable" role="tabpanel">
+  {% if timetable %}
+    <table class="table table-sm table-striped">
+      <thead>
+        <tr><th>Date</th><th>Course</th><th>Time</th><th>Instructor</th><th>Join</th></tr>
+      </thead>
+      <tbody>
+        {% for item in timetable %}
+          <tr>
+            <td>{{ item.date|date:"D, M d, Y" }}</td>
+            <td>{{ item.course }}</td>
+            <td>{{ item.start_time|time:"H:i" }} - {{ item.end_time|time:"H:i" }}</td>
+            <td>{{ item.instructor }}</td>
+            <td>
+              {% if item.join_link %}
+                <a href="{{ item.join_link }}" target="_blank" class="text-primary">Join</a>
+              {% else %} N/A {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No timetable set.</p>
+  {% endif %}
+</div>
+
+
+        <!-- Admin Messages -->
+        <div class="tab-pane fade" id="messages" role="tabpanel" aria-labelledby="messages-tab">
+          <h6 class="fw-bold mb-3">📩 Messages from Admin</h6>
+          {% if admin_messages %}
+            <ul class="list-group">
+              {% for msg in admin_messages %}
+                <li class="list-group-item">
+                  <strong>{{ msg.title }}</strong>
+                  <p class="mb-1">{{ msg.message }}</p>
+                  <small class="text-muted">Sent on {{ msg.created_at|date:"M d, Y - H:i" }}</small>
+                  <form method="post" action="{% url 'archive_message' msg.id %}" onsubmit="return confirm('Archive this message?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger mt-1">Archive</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No messages yet.</p>
+          {% endif %}
+        </div>
+
+     
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+
+<script>
+    const username = "{{ request.user.username|escapejs }}";
+    const role = "{{ request.user.groups.first.name|default:''|lower }}"; // e.g., "student", "admin", "instructor"
+</script>
+
+
+<!-- ✅ Bootstrap Active Tab Handler -->
+<script>
+  const tabEl = document.querySelector('#dashboardTabs .nav-link.active');
+  if (tabEl) new bootstrap.Tab(tabEl).show();
+
+  // Scroll to top on tab switch
+  document.querySelectorAll('#dashboardTabs .nav-link').forEach(button => {
+    button.addEventListener('shown.bs.tab', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Animate tab content
+  const tabButtons = document.querySelectorAll('#dashboardTabs .nav-link');
+  tabButtons.forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function (event) {
+      const target = document.querySelector(event.target.dataset.bsTarget);
+      if (target) {
+        target.classList.add('show-animation');
+        setTimeout(() => target.classList.remove('show-animation'), 300);
+      }
+    });
+  });
+</script>
+
+
+<!-- ✅ Optional Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+{% endblock %}

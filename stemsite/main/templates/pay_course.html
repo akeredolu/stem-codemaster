@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block hide_navbar %}{% with hide_navbar=True %}{% endwith %}{% endblock %}
+{% block show_footer %}{% with show=False %}{% endwith %}{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 600px;">
+  <h2 class="mb-4 text-center">Course Payment</h2>
+
+  <!-- Enrollment Info -->
+  <div class="mb-3">
+    <strong>Student:</strong> {{ enrollment.full_name }}<br>
+    <strong>Course:</strong> {{ enrollment.course.title }}<br>
+    <strong>Class Type:</strong> {{ enrollment.class_type }}<br>
+    <strong>Program:</strong> {{ enrollment.program }}
+  </div>
+
+  <hr>
+
+  <!-- Bank Details -->
+  <h5 class="mb-3">Bank Transfer Details</h5>
+  <p><strong>Account Name:</strong> {{ bank_details.account_name }}</p>
+  <p><strong>Account Number:</strong> {{ bank_details.account_number }}</p>
+  <p><strong>Bank Name:</strong> {{ bank_details.bank_name }}</p>
+
+  <hr>
+
+  <!-- Payment Form -->
+  <form method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+
+    <!-- Show course as readonly -->
+    <div class="mb-3">
+      <label class="form-label">Course</label>
+      <input type="text" class="form-control" value="{{ enrollment.course.title }}" readonly>
+    </div>
+
+    <!-- Hidden input for backend -->
+    <input type="hidden" name="course" value="{{ enrollment.course.id }}">
+
+    <!-- Amount Paid -->
+    <div class="mb-3">
+      <label for="{{ form.amount_paid.id_for_label }}" class="form-label">Amount to Pay (₦)</label>
+      {{ form.amount_paid|as_crispy_field }}
+    </div>
+
+    <!-- Payment Type -->
+    <div class="mb-3">
+      <label for="{{ form.payment_type.id_for_label }}" class="form-label">Payment Type</label>
+      {{ form.payment_type|as_crispy_field }}
+    </div>
+
+    <!-- Payment Method -->
+    <div class="mb-3">
+      <label for="{{ form.payment_method.id_for_label }}" class="form-label">Payment Method</label>
+      {{ form.payment_method|as_crispy_field }}
+    </div>
+
+    <!-- Proof of Payment -->
+    <div class="mb-3" id="receipt-field">
+      <label for="{{ form.proof_of_payment.id_for_label }}" class="form-label">Upload Receipt</label>
+      {{ form.proof_of_payment|as_crispy_field }}
+      <div class="form-text">Upload proof if you used Bank Transfer.</div>
+    </div>
+
+    <button type="submit" id="submit-btn" class="btn btn-success w-100">
+      Proceed to Pay
+    </button>
+  </form>
+</div>
+
+<!-- JS to toggle button text and show/hide receipt field -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const methodSelect = document.getElementById("id_payment_method");
+  const submitBtn = document.getElementById("submit-btn");
+  const receiptField = document.getElementById("receipt-field");
+
+  function updateForm() {
+    if (!methodSelect) return;  // safety check
+
+    if (methodSelect.value === "bank") {
+      receiptField.style.display = "block";
+      submitBtn.textContent = "Submit Proof of Payment";
+    } else {
+      receiptField.style.display = "none";
+      submitBtn.textContent = "Proceed to Pay";
+    }
+  }
+
+  updateForm();  // initial load
+  if (methodSelect) {
+    methodSelect.addEventListener("change", updateForm);
+  }
+});
+</script>
+{% endblock %}
+

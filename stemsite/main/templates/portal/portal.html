@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+  .portal-background {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e0f7fa, #fff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .portal-card-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    width: 100%;
+    max-width: 960px;
+    align-items: start;
+  }
+
+  .portal-card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    opacity: 0;
+    transform: translateY(40px);
+    animation: fadeSlideUp 1s ease-out forwards;
+  }
+
+  @keyframes fadeSlideUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .portal-card-wrapper {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="portal-background">
+  <div class="portal-card-wrapper">
+
+    <!-- Left Column -->
+    <div class="portal-card text-center">
+      <h2 class="mb-4">Welcome to <br /><strong>STEM Codemaster Portal</strong></h2>
+
+      {% if user.is_authenticated %}
+        <p class="mb-3"><strong>{{ user.username }}</strong>!</p>
+        <div class="d-grid gap-2">
+          <a href="{% url 'profile_view' %}" class="btn btn-outline-primary">Profile</a>
+        </div>
+      {% else %}
+        <p class="mb-4">Please register or log in to access your dashboard.</p>
+        <div class="d-grid gap-2">
+          <a href="{% url 'register' %}" class="btn btn-success">Register</a>
+          <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+        </div>
+      {% endif %}
+
+      <div class="d-grid gap-2 mt-4">
+        <a href="{% url 'enroll_now' %}" class="btn btn-success">Enroll Now!</a>
+      </div>
+
+      <form action="{% url 'logout' %}" method="post" class="mt-3">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger w-100">Logout</button>
+      </form>
+    </div>
+
+    <!-- Right Column: Secret Code Login Access -->
+<div class="portal-card text-center">
+  <p class="mb-4">Click to access these pages:</p>
+
+  <div class="d-grid gap-2 mt-3">
+    <a href="{% url 'secret_code_login_simple' %}" class="btn btn-primary">
+      🔐 Login with Secret Code
+    </a>
+  </div>
+
+ <div class="d-grid gap-2 mt-3">
+  {% if enrollment_id %}
+    <a href="{% url 'enrolment_payment_request' enrollment_id %}" class="btn btn-primary">
+      Pay Enrollment Fee
+    </a>
+  {% else %}
+      <a href="{% url 'enroll_now' %}" class="btn btn-secondary btn-lg">Enroll Now</a>
+  {% endif %}
+</div>
+
+
+<div class="d-grid gap-2 mt-4">
+      {% if enrollment_id %}
+        <a href="{% url 'course_payment' enrollment_id %}" class="btn btn-success btn-lg">
+            Pay for Course
+        </a>
+    {% else %}
+        <a href="{% url 'enroll_now' %}" class="btn btn-secondary btn-lg">
+            Enroll Now
+        </a>
+    {% endif %}
+
+</div>
+
+
+  <div class="d-grid gap-2 mt-3">
+      <a href="{% url 'report_issue' %}" class="btn btn-success btn-lg">
+      Report an Issue
+    </a>
+  </div>
+</div>
+{% endblock %}

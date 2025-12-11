@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Class Scheduled</title>
+</head>
+<body>
+    <p>Hi {{ student.username }},</p>
+
+    <p>A new class has been scheduled for you:</p>
+
+    <ul>
+        <li><strong>Course:</strong> {{ timetable.course }}</li>
+        <li><strong>Date:</strong> {{ timetable.date|date:"D, M d, Y" }}</li>
+        <li><strong>Time:</strong> {{ timetable.start_time|time:"H:i" }} - {{ timetable.end_time|time:"H:i" }}</li>
+        <li><strong>Instructor:</strong> {{ timetable.instructor }}</li>
+        {% if timetable.join_link %}
+        <li><strong>Join Link:</strong> <a href="{{ timetable.join_link }}">{{ timetable.join_link }}</a></li>
+        {% endif %}
+    </ul>
+
+    <p>Thank you!</p>
+</body>
+</html>

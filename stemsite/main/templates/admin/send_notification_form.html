@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<h1>Send Notification to Selected Students</h1>
+
+<p>Selected students:</p>
+<ul>
+    {% for student in students %}
+        <li>{{ student.full_name }} ({{ student.email }})</li>
+    {% endfor %}
+</ul>
+
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" name="apply" class="default">Send Notification</button>
+</form>
+
+{% endblock %}
+

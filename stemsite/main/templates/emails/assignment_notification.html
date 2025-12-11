@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Assignment</title>
+</head>
+<body>
+    <h2>Hello {{ student.full_name }},</h2>
+    <p>You have a new assignment in the course: <strong>{{ assignment.course }}</strong>.</p>
+    <p><strong>Assignment Title:</strong> {{ assignment.title }}</p>
+    <p>Instructions: {{ assignment.instructions|default:"No instructions provided." }}</p>
+    <p>Due Date: {{ assignment.due_date }}</p>
+    <p>Please log in to your dashboard to submit your assignment.</p>
+    <hr>
+    <p>-- STEM CodeMaster Team</p>
+</body>
+</html>

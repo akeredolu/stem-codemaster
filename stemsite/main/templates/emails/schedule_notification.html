@@ -1,0 +1,26 @@
+<!-- main/templates/emails/schedule_notification.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Class Scheduled</title>
+</head>
+<body>
+    <p>Hi {{ student.username }},</p>
+
+    <p>A new class has been scheduled:</p>
+
+    <ul>
+        <li><strong>Course:</strong> {{ schedule.course.title }}</li>
+        <li><strong>Date:</strong> {{ schedule.date|date:"D, M d, Y" }}</li>
+        <li><strong>Time:</strong> {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}</li>
+        <li><strong>Instructor:</strong> {{ schedule.instructor }}</li>
+        {% if schedule.join_link %}
+        <li><strong>Join Link:</strong> <a href="{{ schedule.join_link }}">{{ schedule.join_link }}</a></li>
+        {% endif %}
+    </ul>
+
+    <p>Thank you!</p>
+</body>
+</html>
+

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Material Added</title>
+</head>
+<body>
+    <h2>Hello {{ student.full_name }},</h2>
+    <p>New material has been added to your course: <strong>{{ material.course }}</strong>.</p>
+    <p><strong>Material Title:</strong> {{ material.title }}</p>
+    <p>Description: {{ material.description|default:"No description provided." }}</p>
+    <p>Please log in to your dashboard to access the material.</p>
+    <hr>
+    <p>-- STEM CodeMaster Team</p>
+</body>
+</html>
+

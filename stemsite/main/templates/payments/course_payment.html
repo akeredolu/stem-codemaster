@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4 text-center">Payment for {{ course.title }}</h2>
+
+    <div class="row">
+        <!-- LEFT COLUMN: PAYMENT FORM -->
+         <p><strong>Your Course:</strong> {{ enrollment.course.title }}</p>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm p-4">
+                <h5 class="mb-3">Complete Your Payment: Please Select Your Course</h5>
+
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+
+                <form method="POST" enctype="multipart/form-data" id="paymentForm">
+                    {% csrf_token %}
+
+                    {{ form.course }} {# Hidden field #}
+
+                    <!-- AMOUNT -->
+                    <div class="mb-3">
+                        <label class="form-label">Amount to Pay (₦)</label>
+                        {{ form.amount_paid|add_class:"form-control" }}
+                        {% for error in form.amount_paid.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- PAYMENT TYPE -->
+                    <div class="mb-3">
+                        <label class="form-label">Payment Type</label>
+                        {{ form.payment_type|add_class:"form-select" }}
+                        {% for error in form.payment_type.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- SESSION OPTION -->
+                    <div class="mb-3">
+                        <label class="form-label">Session Option</label>
+                        {{ form.session_option|add_class:"form-select" }}
+                        {% for error in form.session_option.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- PAYMENT METHOD -->
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        {{ form.payment_method|add_class:"form-select" }}
+                        {% for error in form.payment_method.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- PROOF OF PAYMENT (Bank Only) -->
+                    <div class="mb-3" id="proofField" style="display:none;">
+                        <label class="form-label">Upload Proof of Bank Transfer</label>
+                        {{ form.proof_of_payment|add_class:"form-control" }}
+                        {% for error in form.proof_of_payment.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="submitBtn">Submit Payment</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: BANK DETAILS -->
+        <div class="col-lg-5 mb-4">
+            {% if bank_details %}
+            <div class="card shadow-sm p-4 bg-light">
+                <h5 class="mb-3">Bank Details</h5>
+                <p><strong>Bank Name:</strong> {{ bank_details.bank_name }}</p>
+                <p><strong>Account Name:</strong> {{ bank_details.account_name }}</p>
+                <p><strong>Account Number:</strong> {{ bank_details.account_number }}</p>
+                <p class="text-muted small">
+                    Please upload proof of payment if paying via bank transfer.
+                </p>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">Bank details are not available at the moment.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const paymentMethod = document.getElementById("id_payment_method");
+    const proofField = document.getElementById("proofField");
+    const submitBtn = document.getElementById("submitBtn");
+
+    function updateUI() {
+        if (paymentMethod.value === "bank") {
+            proofField.style.display = "block";
+            submitBtn.innerText = "Submit Proof of Payment";
+            submitBtn.classList.remove("btn-primary");
+            submitBtn.classList.add("btn-success");
+        } else {
+            proofField.style.display = "none";
+            submitBtn.innerText = "Proceed to Pay (Paystack)";
+            submitBtn.classList.remove("btn-success");
+            submitBtn.classList.add("btn-primary");
+        }
+    }
+
+    updateUI();
+    paymentMethod.addEventListener("change", updateUI);
+});
+</script>
+{% endblock %}
+
