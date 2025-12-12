@@ -1,6 +1,9 @@
+import dj_database_url
 import os
 from pathlib import Path
 import environ
+
+
 
 # BASE_DIR: project root (where manage.py lives)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -118,15 +121,17 @@ CHANNEL_LAYERS = {
 
 # Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'stemcodemaster_db',
-        'USER': 'postgres',
-        'PASSWORD': 'stempostgre123',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get(
+            'DATABASE_URL',
+            f"sqlite:///{BASE_DIR / 'db.sqlite3'}"  # fallback for local
+        ),
+        conn_max_age=600,
+        ssl_require=not env.bool('DJANGO_DEBUG', default=True)  # SSL only in production
+    )
 }
+
+
 
 # Authentication
 LOGIN_URL = 'login'
