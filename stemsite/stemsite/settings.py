@@ -1,6 +1,6 @@
-import dj_database_url
 import os
 from pathlib import Path
+import dj_database_url
 import environ
 
 
@@ -13,9 +13,11 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY
+#ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=[])
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 DEBUG = env.bool('DJANGO_DEBUG', default=False)
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+
 
 # Paystack settings
 PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')
@@ -102,35 +104,66 @@ WSGI_APPLICATION = 'stemsite.wsgi.application'
 
 ASGI_APPLICATION = 'stemsite.asgi.application' 
 
-# Redis for channel layer
+
+
+# =========================
+# REDIS CONFIG (LOCAL + RENDER) CHANNELE_LAYERS
+# =========================
+
+REDIS_URL = os.environ.get("REDIS_URL")
+
+if not REDIS_URL:
+    # Local fallback
+    REDIS_URL = "redis://127.0.0.1:6379"
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                "address": f"{os.environ.get('REDIS_HOST')}:{os.environ.get('REDIS_PORT')}",
-                "username": os.environ.get("REDIS_USERNAME"),
-                "password": os.environ.get("REDIS_PASSWORD"),
-                "ssl": True if os.environ.get("REDIS_SSL") == "True" else False,
-            }],
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
+
+# Check if Render Redis variables exist, otherwise fallback to local
+if os.environ.get("REDIS_HOST") and os.environ.get("REDIS_PORT"):
+    # Render Key-Value (or any external Redis)
+    REDIS_HOST = os.environ.get("REDIS_HOST")
+    REDIS_PORT = os.environ.get("REDIS_PORT")
+    REDIS_USERNAME = os.environ.get("REDIS_USERNAME", None)
+    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
+    REDIS_SSL = os.environ.get("REDIS_SSL", "False") == "True"
+
+    REDIS_URL = f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}" if REDIS_USERNAME else f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+    if REDIS_SSL:
+        REDIS_URL = REDIS_URL.replace("redis://", "rediss://")
+else:
+    # Local Redis fallback
+    REDIS_URL = "redis://127.0.0.1:6379"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
         },
     },
 }
 
 
 
-# Database
+
+# -----------------------------
+# Database - PostgreSQL only
+# -----------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get(
-            'DATABASE_URL',
-            f"sqlite:///{BASE_DIR / 'db.sqlite3'}"  # fallback for local
-        ),
+        default=env('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=not env.bool('DJANGO_DEBUG', default=True)  # SSL only in production
+        ssl_require=not DEBUG  # SSL in production
     )
 }
-
 
 
 # Authentication
