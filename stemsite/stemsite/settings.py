@@ -109,11 +109,27 @@ ASGI_APPLICATION = 'stemsite.asgi.application'
 # =========================
 # REDIS CONFIG (LOCAL + RENDER) CHANNELE_LAYERS
 # =========================
+# ---------- Redis URL ----------
+if os.environ.get("REDIS_HOST") and os.environ.get("REDIS_PORT"):
+    # Render Key-Value Redis
+    REDIS_HOST = os.environ.get("REDIS_HOST")
+    REDIS_PORT = os.environ.get("REDIS_PORT")
+    REDIS_USERNAME = os.environ.get("REDIS_USERNAME", "")
+    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+    REDIS_SSL = os.environ.get("REDIS_SSL", "False") == "True"
 
-REDIS_URL = os.environ.get("REDIS_URL")
+    if REDIS_USERNAME:
+        REDIS_URL = f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+    elif REDIS_PASSWORD:
+        REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+    else:
+        REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
-if not REDIS_URL:
-    # Local fallback
+    # Only replace scheme with rediss:// if SSL is True
+    if REDIS_SSL:
+        REDIS_URL = REDIS_URL.replace("redis://", "rediss://")
+else:
+    # Local Redis fallback
     REDIS_URL = "redis://127.0.0.1:6379"
 
 CHANNEL_LAYERS = {
@@ -124,6 +140,7 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
 
 
 # Check if Render Redis variables exist, otherwise fallback to local
