@@ -4,7 +4,6 @@ import dj_database_url
 import environ
 
 
-
 # BASE_DIR: project root (where manage.py lives)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,10 +12,28 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # SECURITY
-#ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=[])
 SECRET_KEY = env('DJANGO_SECRET_KEY')
+
 DEBUG = env.bool('DJANGO_DEBUG', default=False)
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+
+ALLOWED_HOSTS = env.list(
+    'DJANGO_ALLOWED_HOSTS',
+    default=['localhost', '127.0.0.1', '[::1]', '.onrender.com']
+)
+
+CSRF_TRUSTED_ORIGINS = env.list(
+    'DJANGO_CSRF_TRUSTED_ORIGINS',
+    default=[
+        'http://localhost',
+        'http://127.0.0.1',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'https://stem-codemaster.onrender.com',
+    ]
+)
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 
 # Paystack settings
@@ -51,7 +68,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'widget_tweaks',
 
-    'main',  # your app
+    'main',  
     'signal',
     'channels',
     "chat",
@@ -72,7 +89,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
         
     'main.middleware.ForcePasswordChangeMiddleware',
-  # ✅ Keep only this
+
 ]
 
 
@@ -81,7 +98,7 @@ ROOT_URLCONF = 'stemsite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Adjust template dirs as needed; this points to <BASE_DIR>/main/templates
+        
         'DIRS': [
             BASE_DIR / 'main' / 'templates',
             BASE_DIR / 'chat' / 'templates',
@@ -109,7 +126,6 @@ ASGI_APPLICATION = 'stemsite.asgi.application'
 # =========================
 # REDIS CONFIG (LOCAL + RENDER) CHANNELE_LAYERS
 # =========================
-# ---------- Redis URL ----------
 if os.environ.get("REDIS_HOST") and os.environ.get("REDIS_PORT"):
     # Render Key-Value Redis
     REDIS_HOST = os.environ.get("REDIS_HOST")
@@ -140,35 +156,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
-
-
-
-# Check if Render Redis variables exist, otherwise fallback to local
-if os.environ.get("REDIS_HOST") and os.environ.get("REDIS_PORT"):
-    # Render Key-Value (or any external Redis)
-    REDIS_HOST = os.environ.get("REDIS_HOST")
-    REDIS_PORT = os.environ.get("REDIS_PORT")
-    REDIS_USERNAME = os.environ.get("REDIS_USERNAME", None)
-    REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
-    REDIS_SSL = os.environ.get("REDIS_SSL", "False") == "True"
-
-    REDIS_URL = f"redis://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}" if REDIS_USERNAME else f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
-    if REDIS_SSL:
-        REDIS_URL = REDIS_URL.replace("redis://", "rediss://")
-else:
-    # Local Redis fallback
-    REDIS_URL = "redis://127.0.0.1:6379"
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL],
-        },
-    },
-}
-
-
 
 
 # -----------------------------
