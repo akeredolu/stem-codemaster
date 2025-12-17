@@ -69,6 +69,8 @@ INSTALLED_APPS = [
     'signal',
     'channels',
     "chat",
+    "cloudinary",
+    "cloudinary_storage",
     
 ]
 
@@ -185,10 +187,13 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_ROOT = BASE_DIR / 'media'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_URL = '/media/'  # Optional; Cloudinary serves via its own URL
+
+# Use Cloudinary for all media uploads
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 
 # Admins who will receive system notifications
 ADMINS = [
