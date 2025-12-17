@@ -1,4 +1,6 @@
 import os
+import cloudinary
+import cloudinary.uploader
 from pathlib import Path
 import dj_database_url
 import environ
@@ -60,12 +62,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    
+    "cloudinary",
+    "cloudinary_storage",
     'crispy_forms',
     'crispy_bootstrap5',
     'widget_tweaks',
-    "cloudinary",
-    "cloudinary_storage",
 
     'main',  
     'signal',
@@ -186,14 +188,15 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Media files
-# =========================
-# CLOUDINARY MEDIA STORAGE
-# =========================
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': env('CLOUDINARY_API_KEY'),
+    'API_SECRET': env('CLOUDINARY_API_SECRET'),
+}
 
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-MEDIA_URL = "/media/"  
-
+MEDIA_URL = '/media/'
 
 # Admins who will receive system notifications
 ADMINS = [
