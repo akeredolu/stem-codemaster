@@ -188,20 +188,21 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Media files
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': env('CLOUDINARY_API_KEY'),
-    'API_SECRET': env('CLOUDINARY_API_SECRET'),
+# =========================
+# STORAGE CONFIG (DJANGO 5+)
+# =========================
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
 }
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = "/media/"
 
-MEDIA_URL = '/media/'
-
-# Admins who will receive system notifications
-ADMINS = [
-    ("Admin", EMAIL_HOST_USER),  # You can add more tuples: ("Name", "email")
-]
 
 # Domain handling
 if DEBUG:  # Development
