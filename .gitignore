@@ -110,3 +110,6 @@ desktop.ini
 # Render build cache
 render.yaml
 
+# Database dumps
+*.dump
+*.sql
