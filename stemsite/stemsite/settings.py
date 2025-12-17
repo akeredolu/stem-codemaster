@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+
 # SECURITY
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 
@@ -18,22 +19,18 @@ DEBUG = env.bool('DJANGO_DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list(
     'DJANGO_ALLOWED_HOSTS',
-    default=['localhost', '127.0.0.1', '[::1]', '.onrender.com']
+    default=['localhost', '127.0.0.1', '.onrender.com']
 )
 
 CSRF_TRUSTED_ORIGINS = env.list(
     'DJANGO_CSRF_TRUSTED_ORIGINS',
-    default=[
-        'http://localhost',
-        'http://127.0.0.1',
-        'http://localhost:8000',
-        'http://127.0.0.1:8000',
-        'https://stem-codemaster.onrender.com',
-    ]
+    default=['https://stem-codemaster.onrender.com']
 )
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 
 # Paystack settings
