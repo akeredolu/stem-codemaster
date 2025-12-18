@@ -58,8 +58,7 @@
     <div class="container position-relative d-flex align-items-center justify-content-between">
 
       <a href="{% url 'home' %}" class="logo d-flex align-items-center me-auto me-xl-0">
-        <!-- Uncomment the line below if you also wish to use an image logo -->
-       <!-- <img src="{% static 'assets/img/logo2.png' %}" alt="">-->
+ 
         <h1 class="sitename">Stem CodeMaster</h1>
       </a>
 
@@ -430,7 +429,7 @@
             {% if t.photo %}
               <img src="{{ t.photo.url }}" class="testimonial-img" alt="{{ t.name }}">
             {% else %}
-              <img src="{% static 'assets/img/default-user.jpg' %}" class="testimonial-img" alt="Default">
+              <img src="{% static 'assets/img/default-profile.jpg' %}" class="testimonial-img" alt="Default">
             {% endif %}
 
             <p class="text-muted fst-italic">"{{ t.comment }}"</p>
