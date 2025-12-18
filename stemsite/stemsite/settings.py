@@ -1,6 +1,4 @@
 import os
-import cloudinary
-import cloudinary.uploader
 from pathlib import Path
 import dj_database_url
 import environ
@@ -188,6 +186,16 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Media files
+# =========================
+# CLOUDINARY CONFIG
+# =========================
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": env("CLOUDINARY_API_KEY"),
+    "API_SECRET": env("CLOUDINARY_API_SECRET"),
+}
+
 # =========================
 # STORAGE CONFIG (DJANGO 5+)
 # =========================
