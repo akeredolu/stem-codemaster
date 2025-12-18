@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env()  # ← let django-environ auto-detect .env
 
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # SECURITY
 SECRET_KEY = env('DJANGO_SECRET_KEY')
