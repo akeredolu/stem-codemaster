@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<style>
+/* Floating Home Button */
+.floating-home-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1050;
+    background-color: #0d6efd;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+.floating-home-btn:hover {
+    background-color: #0b5ed7;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+</style>
+
+<!-- Hero Section -->
+<section class="bg-primary text-white py-5 text-center">
+  <div class="container">
+    <h1 class="display-4 fw-bold">Professional Services We Offer</h1>
+    <p class="lead">Explore our wide range of technology solutions for individuals, businesses, and schools.</p>
+    <a href="#services-list" class="btn btn-light btn-lg mt-3">View our Services</a>
+
+    <div class="mt-3">
+        <a href="{% url 'home' %}" class="btn btn-outline-light btn-lg">
+            &larr; Back to Home
+        </a>
+    </div>
+  </div>
+</section>
+
+<!-- Services List Section -->
+<section id="services-list" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center mb-5">Our Services</h2>
+    <div class="row g-4">
+      {% for service in services %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          {% if service.icon %}
+            <img src="{{ service.icon.url }}" class="card-img-top p-3" alt="{{ service.name }}" style="height:150px; object-fit:contain;">
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title text-center">{{ service.name }}</h5>
+            <p class="card-text" style="text-align: justify;">
+              {{ service.description|truncatewords:25 }}
+            </p>
+            <div class="mt-auto d-grid gap-2">
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal{{ service.id }}">Request Service</button>
+              {% if service.brochure %}
+             <a href="{{ service.brochure_download_url }}"
+   class="btn btn-outline-primary">
+   <i class="bi bi-file-earmark-pdf"></i> Download Brochure
+</a>
+
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- Service Modal -->
+      <div class="modal fade" id="serviceModal{{ service.id }}" tabindex="-1" aria-labelledby="serviceModalLabel{{ service.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="serviceModalLabel{{ service.id }}">{{ service.name }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p>{{ service.description }}</p>
+
+              <!-- Service Request Form in Modal -->
+              <form method="post" action="{% url 'our_services' %}">
+                {% csrf_token %}
+                <input type="hidden" name="service" value="{{ service.id }}">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    {{ form.name.label_tag }}
+                    {{ form.name|add_class:"form-control form-control-lg" }}
+                  </div>
+                  <div class="col-md-6">
+                    {{ form.email.label_tag }}
+                    {{ form.email|add_class:"form-control form-control-lg" }}
+                  </div>
+                  <div class="col-md-6">
+                    {{ form.phone.label_tag }}
+                    {{ form.phone|add_class:"form-control form-control-lg" }}
+                  </div>
+                  <div class="col-md-12">
+                    {{ form.details.label_tag }}
+                    {{ form.details|add_class:"form-control form-control-lg" }}
+                  </div>
+                </div>
+                <div class="text-center mt-3">
+                  <button type="submit" class="btn btn-success w-100">Submit Request</button>
+                </div>
+              </form>
+
+              {% if service.brochure %}
+              <a href="{{ service.brochure.url }}" target="_blank" class="btn btn-outline-secondary mt-3">Download Brochure</a>
+              {% endif %}
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Vibrant Payment Info Card (Production-Ready) -->
+<div class="payment-info-card mt-5 p-4 rounded shadow-lg text-center text-white" style="background: linear-gradient(135deg, #0d6efd, #6610f2); max-width: 800px; margin: 0 auto;">
+  <div class="d-flex align-items-center justify-content-center mb-3">
+    <!-- Payment Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="white" class="bi bi-cash-coin me-2" viewBox="0 0 16 16">
+      <path d="M11 15a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
+      <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 1 0 0 14A7 7 0 0 0 8 1z"/>
+    </svg>
+    <h5 class="fw-bold mb-0">Payment Policy</h5>
+  </div>
+  <p class="mb-0">
+    To initiate any of our services, clients are required to pay a <strong>service initiation fee of 10% of the total project cost</strong>. 
+    The remaining balance is due upon successful completion and delivery of the service. 
+    This ensures a secure, transparent, and mutually trustworthy engagement throughout the development process.
+  </p>
+</div>
+
+<!-- Optional CSS for production safety -->
+<style>
+.payment-info-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.payment-info-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.3);
+}
+</style>
+
+
+<!-- Main Service Request Form -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center mb-5">Request a Service</h2>
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+        <div class="card shadow-sm border-0 rounded-4 p-5 mx-auto">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            <div class="row g-4">
+              <div class="col-md-12">
+                {{ form.service.label_tag }}
+                {{ form.service|add_class:"form-select form-select-lg" }}
+              </div>
+              <div class="col-md-6">
+                {{ form.name.label_tag }}
+                {{ form.name|add_class:"form-control form-control-lg" }}
+              </div>
+              <div class="col-md-6">
+                {{ form.email.label_tag }}
+                {{ form.email|add_class:"form-control form-control-lg" }}
+              </div>
+              <div class="col-md-6">
+                {{ form.phone.label_tag }}
+                {{ form.phone|add_class:"form-control form-control-lg" }}
+              </div>
+              <div class="col-md-12">
+                {{ form.details.label_tag }}
+                {{ form.details|add_class:"form-control form-control-lg" }}
+              </div>
+            </div>
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-primary btn-lg px-5 shadow">Submit Request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Testimonials Carousel --> 
+<section class="py-5 bg-white">
+  <div class="container">
+
+    <!-- Heading -->
+    <div class="row mb-4">
+      <div class="col-lg-8 col-md-10">
+        <h2 class="fw-bold">What Our Clients Say</h2>
+      </div>
+    </div>
+
+    <!-- Swiper Carousel -->
+    <div class="swiper testimonial-swiper">
+      <div class="swiper-wrapper">
+
+        {% for testimonial in testimonials %}
+        <div class="swiper-slide" data-aos="fade-up">
+          <div class="card border-0 shadow-sm p-4 h-100 text-center">
+
+            <!-- Photo (Centered) -->
+            <div class="d-flex justify-content-center mb-3">
+              {% if testimonial.photo %}
+              <img src="{{ testimonial.photo.url }}" 
+                   class="rounded-circle" 
+                   style="width:80px; height:80px; object-fit:cover;" 
+                   alt="{{ testimonial.client_name }}">
+              {% else %}
+              <img src="{% static 'assets/img/default-profile.jpg' %}" 
+                   class="rounded-circle" 
+                   style="width:80px; height:80px; object-fit:cover;" 
+                   alt="Default">
+              {% endif %}
+            </div>
+
+            <!-- Client Name -->
+            <div class="fw-bold mb-1">Client name: {{ testimonial.client_name }}</div>
+
+            <!-- Client Title -->
+            {% if testimonial.client_title %}
+            <div class="text-muted mb-2">Client title: {{ testimonial.client_title }}</div>
+            {% endif %}
+
+            <!-- Feedback -->
+            <p class="fst-italic">Feedback: "{{ testimonial.feedback }}"</p>
+
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>
+
+      <!-- Navigation -->
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+
+      <!-- Pagination -->
+      <div class="swiper-pagination"></div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- Contact Section -->
+<section class="py-5 bg-white text-center">
+  <div class="container">
+    <h2 class="mb-4">Need Assistance?</h2>
+    <p class="mb-4">Contact our admin directly for more information.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <div class="btn btn-outline-success btn-lg d-flex flex-column align-items-center">
+    📞 Call Admin
+    <small class="mt-1">+234 803 752 3826</small>
+  </div>
+      <a href="https://mail.google.com/mail/?view=cm&to=code247.me@gmail.com&su=Service%20Request" target="_blank" class="btn btn-primary">
+      Email Admin
+      </a>
+      <a href="https://wa.me/08037523826" target="_blank" class="btn btn-success">Message on WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<!-- Floating Home Button -->
+<a href="{% url 'home' %}" class="floating-home-btn" title="Back to Home">
+  <i class="bi bi-house-door-fill"></i> Home
+</a>
+
+{% endblock %}
+

@@ -35,6 +35,16 @@
         <form method="post" action="" novalidate>
             {% csrf_token %}
 
+            <!-- Non-field errors (e.g., course-level validation) -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-3">
+                    {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+
             <!-- Full Name -->
             <div class="form-group mb-3">
                 <label for="{{ form.full_name.id_for_label }}">Full Name</label>
@@ -70,6 +80,16 @@
                     <div class="text-danger small">{{ error }}</div>
                 {% endfor %}
             </div>
+
+            <!-- Skill Level -->
+            <div class="form-group mb-3">
+            <label for="{{ form.skill_level.id_for_label }}">Skill Level</label>
+            {{ form.skill_level }}
+            {% for error in form.skill_level.errors %}
+            <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+            </div>
+
 
             <!-- Class Type -->
             <div class="form-group mb-4">

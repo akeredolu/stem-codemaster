@@ -1,15 +1,25 @@
+import environ
 import os
 from pathlib import Path
 import dj_database_url
-import environ
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
-# BASE_DIR: project root (where manage.py lives)
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent  # stemsite/stemsite -> stemsite
 
 # Initialise environment variables
-env = environ.Env()
-environ.Env.read_env()  # ← let django-environ auto-detect .env
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.exists():
+    env.read_env(ENV_FILE)
+else:
+    print("⚠️ .env file not found, relying on system env vars")
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -39,19 +49,30 @@ PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_VERIFY_URL = env('PAYSTACK_VERIFY_URL')
 
-# Email Configuration (use env consistently)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-SERVER_EMAIL = EMAIL_HOST_USER
-EMAIL_TIMEOUT = 15
 
-# Contact notification email
-CONTACT_NOTIFICATION_EMAIL = EMAIL_HOST_USER
+# =========================
+# EMAIL CONFIGURATION (Brevo SMTP + Verified Gmail sender)
+# =========================
+
+# Use env vars for all sensitive info
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='smtp-relay.brevo.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+
+# Brevo SMTP credentials (must always be Brevo login)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='9e5404001@smtp-brevo.com')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='441cae9f7db479307d9459745fc5d72bdf50de58db927cfd4a90074dceece5ff-cG1cLMEwzCzX7V3r')
+
+# Verified sender email (can be Gmail for now)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='STEM CodeMaster <code247.me@gmail.com>')
+SERVER_EMAIL = env('SERVER_EMAIL', default='STEM CodeMaster <code247.me@gmail.com>')
+
+# Optional: email for contact form notifications
+CONTACT_NOTIFICATION_EMAIL = env('CONTACT_NOTIFICATION_EMAIL', default=EMAIL_HOST_USER)
+
+ADMIN_EMAIL = env('CONTACT_NOTIFICATION_EMAIL', default=EMAIL_HOST_USER)
 
 # Application definition
 INSTALLED_APPS = [
@@ -72,6 +93,7 @@ INSTALLED_APPS = [
     'signal',
     'channels',
     "chat",   
+    'services',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -101,6 +123,7 @@ TEMPLATES = [
         'DIRS': [
             BASE_DIR / 'main' / 'templates',
             BASE_DIR / 'chat' / 'templates',
+            
         ],
         
         'APP_DIRS': True,
@@ -115,11 +138,11 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'stemsite.wsgi.application'
 
 
 ASGI_APPLICATION = 'stemsite.asgi.application' 
-
 
 
 # =========================
@@ -140,8 +163,6 @@ CHANNEL_LAYERS = {
     },
 }
 
-
-
 # -----------------------------
 # Database - PostgreSQL only
 # -----------------------------
@@ -152,7 +173,6 @@ DATABASES = {
         ssl_require=not DEBUG  # SSL in production
     )
 }
-
 
 # Authentication
 LOGIN_URL = 'login'
@@ -195,6 +215,7 @@ CLOUDINARY_STORAGE = {
     "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
     "API_KEY": env("CLOUDINARY_API_KEY"),
     "API_SECRET": env("CLOUDINARY_API_SECRET"),
+    "RESOURCE_TYPE": "raw",
 }
 
 # =========================
@@ -210,7 +231,7 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = "/media/"
+MEDIA_URL = "/"
 
 
 # Domain handling
@@ -222,3 +243,8 @@ else:      # Production
 
 #----------Change to your real URL in Production ------------
 SITE_URL = "http://127.0.0.1:8000"
+
+# Admins who will receive system notifications
+ADMINS = [
+    ("Admin", EMAIL_HOST_USER),  # You can add more tuples: ("Name", "email")
+]

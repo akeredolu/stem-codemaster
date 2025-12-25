@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+/* Floating Home Button */
+.floating-home-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1050;
+    background-color: #0d6efd;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+.floating-home-btn:hover {
+    background-color: #0b5ed7;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+</style>
+
+<section class="py-20 px-5 text-center">
+  <h1 class="text-4xl font-bold mb-4">Thank You!</h1>
+  <p class="text-lg mb-6">Your service request has been submitted. We will get back to you shortly.</p>
+  <a href="{% url 'our_services' %}" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition">Back to Services</a>
+ 
+</section>
+
+<!-- Floating Home Button -->
+<a href="{% url 'home' %}" class="floating-home-btn" title="Back to Home">
+  <i class="bi bi-house-door-fill"></i> Home
+</a>
+
+{% endblock %}
+

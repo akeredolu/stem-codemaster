@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice #{{ service_request.id }}</title>
+</head>
+<body style="font-family: Arial, sans-serif; font-size: 14px; color: #000; margin:0; padding:0;">
+    <div style="width: 100%; max-width: 700px; margin: 0 auto; padding: 20px; border: 1px solid #ddd;">
+        <!-- Header -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+            <tr>
+                <td style="text-align: center;">
+                    <h1 style="margin:0; font-size: 24px;">STEM CodeMaster</h1>
+                    <p style="margin:5px 0 0; font-size: 16px;">Professional Services Invoice</p>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Client & Invoice Details -->
+        <table width="100%" cellpadding="5" cellspacing="0" border="1" style="border-collapse: collapse; margin-bottom: 30px;">
+            <tr style="background-color: #f0f0f0;">
+                <th align="left">Invoice ID</th>
+                <td>{{ service_request.id }}</td>
+            </tr>
+            <tr>
+                <th align="left">Client Name</th>
+                <td>{{ service_request.name }}</td>
+            </tr>
+            <tr style="background-color: #f0f0f0;">
+                <th align="left">Email</th>
+                <td>{{ service_request.email }}</td>
+            </tr>
+            <tr>
+                <th align="left">Service</th>
+                <td>{{ service_request.service.name }}</td>
+            </tr>
+            <tr style="background-color: #f0f0f0;">
+                <th align="left">Amount</th>
+                <td>₦{{ service_request.amount_paid }}</td>
+            </tr>
+            <tr>
+                <th align="left">Payment Method</th>
+                <td>{{ service_request.payment_method|default:"N/A" }}</td>
+            </tr>
+            <tr style="background-color: #f0f0f0;">
+                <th align="left">Status</th>
+                <td>{{ service_request.payment_status|default:"Pending" }}</td>
+            </tr>
+        </table>
+
+        <!-- Footer -->
+        <p style="text-align: center; font-size: 14px; margin-top: 20px;">
+            Thank you for choosing <strong>STEM CodeMaster</strong>!<br>
+            For questions, contact us at <a href="mailto:admin@stemcodemaster.com">admin@stemcodemaster.com</a>
+        </p>
+    </div>
+</body>
+</html>
+

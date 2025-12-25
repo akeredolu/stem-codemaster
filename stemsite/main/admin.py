@@ -501,11 +501,11 @@ def send_custom_notification(modeladmin, request, queryset):
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
     list_display = (
-        "full_name", "email", "program", "is_enrollment_paid",
+        "full_name", "email", "program", "skill_level", "is_enrollment_paid",
         "is_course_activated", "is_active", "is_activation_email_sent"
     )
-    list_filter = ("program", "is_enrollment_paid", "is_course_activated", "is_active")
-    search_fields = ("full_name", "email", "program")
+    list_filter = ("program", "skill_level", "is_enrollment_paid", "is_course_activated", "is_active")
+    search_fields = ("full_name", "email", "program", "skill_level")
     readonly_fields = ("secret_code",)
 
     actions = [

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+/* Floating Home Button */
+.floating-home-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1050;
+    background-color: #0d6efd;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease-in-out;
+}
+
+.floating-home-btn:hover {
+    background-color: #0b5ed7;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+</style>
+
+<div class="container py-5 text-center">
+    <h2 class="mb-4">Payment Submitted</h2>
+    <p>Thank you for submitting your proof of payment for the service:</p>
+    <h4 class="fw-bold">{{ service_request.service.name }}</h4>
+    <p><strong>Amount Paid:</strong> ₦{{ service_request.amount_due }}</p>
+
+    <div class="alert alert-info mt-4" role="alert">
+        Your payment is currently under review. Once verified, you will receive a confirmation email.
+    </div>
+
+    <p class="mt-3">
+        If you need assistance, contact our admin directly:
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="mailto:admin@stemcodemaster.com" class="btn btn-primary">Email Admin</a>
+        <a href="https://wa.me/08037523826" class="btn btn-success">Message on WhatsApp</a>
+    </div>
+</div>
+
+<!-- Floating Home Button -->
+<a href="{% url 'home' %}" class="floating-home-btn" title="Back to Home">
+  <i class="bi bi-house-door-fill"></i> Home
+</a>
+
+{% endblock %}
+

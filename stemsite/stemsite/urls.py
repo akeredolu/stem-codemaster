@@ -8,5 +8,6 @@ urlpatterns = [
     path('chat/', include('chat.urls')),
     
     path('admin/broadcast/', include('main.urls_admin')), 
+    path('services/', include('services.urls')),
 ]
 

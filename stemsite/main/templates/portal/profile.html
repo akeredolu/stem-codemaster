@@ -134,7 +134,7 @@
           <div class="mb-4">
             <div class="course-card p-3 border rounded shadow-sm">
               <p><strong>Course:</strong> {{ enrollment.course.title }}</p>
-              
+              <p><strong>Skill Level:</strong> {{ enrollment.skill_level }}</p>
               <p><strong>Program:</strong> {{ enrollment.program }}</p>
               <p><strong>Class Type:</strong> {{ enrollment.class_type|default:"TBA" }}</p>
               <p><strong>Enrolled On:</strong> {{ enrollment.submitted_at|date:'M d, Y' }}</p>

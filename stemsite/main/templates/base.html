@@ -39,7 +39,6 @@
 
   <header id="header" class="fixed-top d-none"></header>
 
-
  {% if messages %}
   <div id="message-container" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;">
     {% for message in messages %}
@@ -69,13 +68,12 @@
     <li><a href="#programs">Programs</a></li>
     <li><a href="#courses">Courses</a></li>
     <li><a href="#Classes-and-Fees">Classes and Fees</a></li>
+    <li><a href="{% url 'our_services' %}">Our Services</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="{% url 'portal' %}">Portal</a></li>
   </ul>
   <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
 </nav>
-
-      <!--<a class="cta-btn" href="#about">Get Started</a>-->
 
 </div>
 </header>
@@ -115,14 +113,24 @@
 <div class="mt-4 text-center d-flex justify-content-center gap-3 flex-wrap">
   <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">🚀 Get Started</a>
   <a href="{% url 'enroll_now' %}" class="btn btn-outline-light btn-lg">📩 Join Now</a>
+  <a href="https://res.cloudinary.com/dx4v4yjb1/image/upload/v1766629783/STEM_CodeMaster_Complete_Services_Brochure_irlnbs.pdf"
+   class="btn btn-outline-warning btn-lg"
+   target="_blank"
+   download>
+  📄 Download Our Services Brochure
+</a>
+  <div class="btn btn-outline-success btn-lg d-flex flex-column align-items-center">
+    📞 Call Admin
+    <small class="mt-1">+234 803 752 3826</small>
+  </div>
+
 </div>
 </div>
 
 </section>
 
-<!-- /Hero Section -->
+<!-- Hero Section  End-->
     
-    <!-- About Section -->
 <!-- About Section -->
 <section id="about" class="about section">
   <div class="container section-title" data-aos="fade-up">
@@ -153,7 +161,6 @@
 <!-- /About Section -->
     <hr/>
 
-<!-- Programs Section -->
 <!-- Programs Section -->
 <section id="programs" class="py-5 bg-light">
   <div class="container section-title" data-aos="fade-up">
@@ -282,7 +289,6 @@
 </div>
 
 <!--End of Enrol Now! Button-->
-
 
 <!--Courses Listing Section Start Here-->
 <section id="courses" class="py-5 bg-light">
@@ -413,7 +419,6 @@
 
 </section>
 <!--courses and fee end-->
-
 
 <!-- Testimonials Carousel -->
 {% load static %}

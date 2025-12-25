@@ -7,9 +7,8 @@ from .models import IssueReport
 
 from django.forms import HiddenInput 
 
-from .models import Enrollment, ContactMessage, Profile
 from .models import CoursePayment, Course
-
+from .models import Enrollment, ContactMessage, Profile
 
 
 # ----------------------------
@@ -30,40 +29,82 @@ class ContactForm(forms.ModelForm):
 # ----------------------------
 # Enrollment Form (Free enrollment)
 # ----------------------------
+
+# -----------------------------------
+# Skill level comparison order
+# -----------------------------------
+# Skill level comparison order
+SKILL_LEVEL_ORDER = {
+    "Beginner": 1,
+    "Intermediate": 2,
+    "Advanced": 3,
+}
+
+# Courses with minimum required skill level
+COURSE_MIN_LEVEL = {
+    "Advance Full Stack Web Development with Django": "Advanced",
+    "Full Stack Web Development with Django": "Intermediate",
+    "Full Stack Web Development with Laravel": "Intermediate",
+    "Robotics with Arduino Uno and Micro:bit": "Intermediate",
+    # Add more if needed; courses not listed are Beginner-friendly
+}
+
 class EnrollmentForm(forms.ModelForm):
     class Meta:
         model = Enrollment
-        fields = ['full_name', 'email', 'program', 'course', 'class_type']
+        fields = [
+            'full_name',
+            'email',
+            'program',
+            'course',
+            'class_type',
+            'skill_level',
+        ]
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Full Name'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
             'program': forms.Select(attrs={'class': 'form-control'}),
             'course': forms.Select(attrs={'class': 'form-control'}),
             'class_type': forms.Select(attrs={'class': 'form-control'}),
+            'skill_level': forms.Select(attrs={'class': 'form-control'}),
         }
 
+    # --- Existing clean_email() stays here ---
     def clean_email(self):
         email = self.cleaned_data.get('email')
-
-        # ✅ Check if a User with this email already exists
         from django.contrib.auth import get_user_model
         User = get_user_model()
         existing_user = User.objects.filter(email__iexact=email).first()
-
         if existing_user:
-            # Ensure enrolment isn't duplicated for same course
             existing_enrol = Enrollment.objects.filter(
                 user=existing_user,
                 course=self.cleaned_data.get('course')
             ).first()
-
             if existing_enrol and existing_enrol.is_enrollment_paid:
                 raise ValidationError(
                     "This email is already linked to a completed enrollment for this course."
                 )
-
         return email
 
+    # --- NEW: course-level locking ---
+    def clean(self):
+        cleaned_data = super().clean()
+        course = cleaned_data.get("course")
+        skill_level = cleaned_data.get("skill_level")
+
+        # Fail-safe if either field missing
+        if not course or not skill_level:
+            return cleaned_data
+
+        # Check if course has a minimum level
+        required_level = COURSE_MIN_LEVEL.get(course)
+        if required_level:
+            if SKILL_LEVEL_ORDER[skill_level] < SKILL_LEVEL_ORDER[required_level]:
+                raise ValidationError(
+                    f"The course '{course}' requires at least {required_level} level."
+                )
+
+        return cleaned_data
 
 
 # ----------------------------

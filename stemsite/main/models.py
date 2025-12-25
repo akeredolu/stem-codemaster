@@ -37,6 +37,12 @@ class Enrollment(models.Model):
         ('Weekend Class', 'Weekend Class'),
         ('Holiday / Summer Class', 'Holiday / Summer Class'),
     ]
+    
+    SKILL_LEVEL_CHOICES = [
+        ('Beginner', 'Beginner'),
+        ('Intermediate', 'Intermediate'),
+        ('Advanced', 'Advanced'),
+    ]
 
     # Student details
     full_name = models.CharField(max_length=100)
@@ -53,7 +59,8 @@ class Enrollment(models.Model):
     program = models.CharField(max_length=50, choices=PROGRAM_CHOICES)
     course = models.CharField(max_length=100, choices=COURSE_CHOICES)
     class_type = models.CharField(max_length=50, choices=CLASS_TYPE_CHOICES)
-
+    skill_level = models.CharField(max_length=20, choices=SKILL_LEVEL_CHOICES)
+    
     # Secret login & password flow
     secret_code = models.CharField(max_length=20, blank=True, null=True)
     has_set_password = models.BooleanField(default=False)  # ✅ renamed
