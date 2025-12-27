@@ -1,7 +1,8 @@
 #------------General Helper Function-----------
 # main/utils/email_utils.py
 
-from django.core.mail import send_mail
+#from django.core.mail import send_mail
+from main.utils.email_service import send_email_async
 from django.conf import settings
 from django.template import Template, Context
 from main.models import EmailTemplate
@@ -26,12 +27,12 @@ def send_templated_email(student, template_name, context, fallback_subject, fall
         subject = fallback_subject
         body = fallback_message
 
-    send_mail(
+    send_email_async(
         subject,
         body,
         settings.DEFAULT_FROM_EMAIL,
         [student.email],
-        fail_silently=False,
+        fail_silently=True,
     )
 
 

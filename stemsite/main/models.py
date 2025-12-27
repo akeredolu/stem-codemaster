@@ -3,7 +3,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from django.core.mail import send_mail
+#from django.core.mail import send_mail
+from main.utils.email_service import send_email_async
 
 
 from django.urls import reverse
@@ -59,7 +60,7 @@ class Enrollment(models.Model):
     program = models.CharField(max_length=50, choices=PROGRAM_CHOICES)
     course = models.CharField(max_length=100, choices=COURSE_CHOICES)
     class_type = models.CharField(max_length=50, choices=CLASS_TYPE_CHOICES)
-    skill_level = models.CharField(max_length=20, choices=SKILL_LEVEL_CHOICES)
+    skill_level = models.CharField(max_length=20,choices=SKILL_LEVEL_CHOICES,blank=False)
     
     # Secret login & password flow
     secret_code = models.CharField(max_length=20, blank=True, null=True)
@@ -187,30 +188,8 @@ class Material(models.Model):
             return 'zip'
         else:
             return 'other'
-    
-    def send_material_notification(self):
-        """
-        Send email notification to recipients or all students in the course.
-        """
-        if self.recipients.exists():
-            users_to_notify = self.recipients.all()
-        else:
-            enrollments = Enrollment.objects.filter(course=self.course, is_active=True)
-            users_to_notify = [e.user for e in enrollments if e.user]
 
-        for user in users_to_notify:
-            if user.email:
-                from django.core.mail import send_mail
-                from django.conf import settings
-
-                send_mail(
-                    subject=f"New Material: {self.title}",
-                    message=f"Dear {user.get_full_name() or user.username},\n"
-                            f"A new material '{self.title}' has been uploaded in {self.course.title}.",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
+    # ✅ Remove the send_material_notification method entirely
 
 
 #-----------Newly Adfded to Material Model----------------

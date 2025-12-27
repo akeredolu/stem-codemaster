@@ -26,14 +26,9 @@ class ContactForm(forms.ModelForm):
         }
 
 
-# ----------------------------
-# Enrollment Form (Free enrollment)
-# ----------------------------
-
 # -----------------------------------
 # Skill level comparison order
 # -----------------------------------
-# Skill level comparison order
 SKILL_LEVEL_ORDER = {
     "Beginner": 1,
     "Intermediate": 2,

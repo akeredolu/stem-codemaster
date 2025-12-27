@@ -14,7 +14,9 @@ from django.urls import reverse
 from django.contrib import messages
 from django.conf import settings
 from django.template import Template, Context
-from django.core.mail import send_mail
+#from django.core.mail import send_mail
+from main.utils.email_service import send_email_async
+
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -47,12 +49,17 @@ from main.utils.email_utils import send_payment_receipt
 
 from chat.models import ChatMessage, ChatRoom
 
-from . import utils  # new utils we wrote
+from . import utils  
 
 from .utils.email_senders import send_activation_email
 from main.utils import generate_secret_code
 from django.utils import timezone
 from datetime import timedelta
+
+from django.template.loader import render_to_string
+import logging
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -96,16 +103,15 @@ def home(request):
                     "-STEM Codemaster Team."
                 )
 
-            send_mail(
+            send_email_async(
                 subject=subject,
                 message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[contact.email],
-                fail_silently=False,
+                recipients=[contact.email],
+                fail_silently=True,
             )
 
             # Notify admin
-            send_mail(
+            send_email_async(
                 subject=f"New Contact Message from {contact.name}",
                 message=(
                     f"You received a new contact message:\n\n"
@@ -114,11 +120,10 @@ def home(request):
                     f"Subject: {contact.subject}\n\n"
                     f"Message:\n{contact.message}"
                 ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[settings.CONTACT_NOTIFICATION_EMAIL],
-                fail_silently=False,
+                recipients=[settings.CONTACT_NOTIFICATION_EMAIL],
+                fail_silently=True,
             )
-
+            
             messages.success(
                 request,
                 "Your message has been sent successfully. A confirmation email has been sent."
@@ -195,11 +200,11 @@ def register(request):
 def enroll_now(request):
     """
     Display and handle free enrollment form.
-    On successful POST, save Enrollment, send confirmation email,
+    On successful POST, save Enrollment, send confirmation email asynchronously,
     and redirect to enrolment_success page.
     """
 
-    # 1️⃣ Enforce registration before enrollment
+    # Enforce registration before enrollment
     has_registered = request.session.get('has_registered', False)
 
     if request.method == 'POST':
@@ -207,35 +212,33 @@ def enroll_now(request):
         if form.is_valid():
             enrollment_data = form.cleaned_data
 
-            # ✅ Recover user either from login or from registration session
+            # Recover user from login or registration session
             if request.user.is_authenticated:
                 user = request.user
             else:
                 user = None
                 user_id = request.session.get("registered_user_id")
                 if user_id:
-                    from django.contrib.auth import get_user_model
                     User = get_user_model()
                     try:
                         user = User.objects.get(id=user_id)
                     except User.DoesNotExist:
                         user = None
-                        
-        # ⚠ Safeguard: never attach superuser to enrollment
+
+                    # Safeguard: never attach superuser
                     if user and user.is_superuser:
                         messages.error(request, "Cannot create enrollment for admin or superuser accounts.")
                         return redirect('portal')
 
-            course = enrollment_data.get("course")
-
-            # --- SAFE Enrollment creation: always new record ---
+            # Create enrollment safely
             enrollment = Enrollment.objects.create(
                 user=user,
-                full_name=enrollment_data.get("full_name"),
-                email=enrollment_data.get("email"),
-                program=enrollment_data.get("program"),
-                class_type=enrollment_data.get("class_type"),
-                course=course,
+                full_name=enrollment_data.get("full_name", "").strip(),
+                email=enrollment_data.get("email", "").strip(),
+                program=enrollment_data.get("program", ""),
+                class_type=enrollment_data.get("class_type", ""),
+                course=enrollment_data.get("course", ""),
+                skill_level=enrollment_data.get("skill_level", ""),  # ensures form value is used
                 payment_reference=str(uuid.uuid4()),
                 is_enrollment_paid=False,
                 is_course_activated=False,
@@ -243,63 +246,39 @@ def enroll_now(request):
                 payment_method=None,
                 paid_at=None,
             )
-
-            created = True
-
-            # Store enrollment ID in session for success page
-            request.session['enrollment_id'] = enrollment.id  
-            
-            
-            # ✅ Store enrollment email in session for proof upload fallback
-            request.session['enrollment_email'] = enrollment.email   # <-- ADD THIS LINE
+          
+            # Store enrollment ID & email in session for success page / proof upload fallback
+            request.session['enrollment_id'] = enrollment.id
+            request.session['enrollment_email'] = enrollment.email
 
             # Reset registration flag
             if 'has_registered' in request.session:
                 del request.session['has_registered']
 
-            # Prepare context for email
-            context = {
-                'name': enrollment.full_name,
-                'email': enrollment.email,
-                'program': enrollment.program,
-                'course': enrollment.course,
-                'class_type': enrollment.class_type,
-            }
-
-            # Send templated email
-           
-            success = send_templated_email(
-                student=enrollment,   # ✅ FIXED
-                template_name="enrollment_confirmation",
-                context=context,
-                fallback_subject="Enrollment Received",
-                fallback_message=(
-                    f"Dear {enrollment.full_name},\n\n"
-                    f"Thank you for enrolling in {enrollment.course} "
-                    f"({enrollment.program}, {enrollment.class_type}).\n\n"
-                    f"Please pay the ₦2,500 enrollment fee to complete your registration.\n"
-                    f"Once payment is verified, your secret login code will be sent to you."
-                ),
+            # Prepare email content
+            subject = "Enrollment Received"
+            message = (
+                f"Dear {enrollment.full_name},\n\n"
+                f"Thank you for enrolling in {enrollment.course} "
+                f"({enrollment.program}, {enrollment.class_type}).\n\n"
+                f"Please pay the ₦2,500 enrollment fee to complete your registration.\n"
+                f"Once payment is verified, your secret login code will be sent to you."
             )
 
+            # Send email asynchronously
+            send_email_async(
+                subject=subject,
+                message=message,
+                recipients=[enrollment.email]
+            )
 
-            if success:
-                enrollment.is_email_sent = True
-                enrollment.save(update_fields=["is_email_sent"])
+                # Show success message
+            messages.success(
+                request,
+                "Your enrollment has been submitted. A confirmation email has been sent."
+            )
 
-            # Display messages based on creation
-            if created:
-                messages.success(
-                    request,
-                    "Your enrollment has been submitted. A confirmation email has been sent."
-                )
-            else:
-                messages.info(
-                    request,
-                    "You are already enrolled in this course. A confirmation email has been sent previously."
-                )
-
-            # Redirect with enrollment_id for success page
+            # Redirect to success page
             return redirect('enrolment_success', enrollment_id=enrollment.id)
 
     else:
@@ -310,7 +289,6 @@ def enroll_now(request):
         'enroll_now.html',
         {'form': form, 'has_registered': has_registered}
     )
-
 
 # -------------- ENROLMENT SUCCESS PAGE --------------
 def enrolment_success(request, enrollment_id):
@@ -457,36 +435,24 @@ def enrolment_payment_verify(request, enrollment_id):
             enrollment.user = user
             enrollment.save()
 
-        # ✅ Send secret login code email
-        context = {
-            "full_name": enrollment.full_name,
-            "email": enrollment.email,
-            "secret_code": secret_code,
-        }
-        
         # SAFE EMAIL SENDING (does not block payment flow)
-        try:
-            send_templated_email(
-                enrollment,
-                template_name="enrollment_payment_success",
-                context={
-                    'name': enrollment.full_name,
-                    'program': enrollment.program,
-                    'course': enrollment.course,
-                    'secret_code': secret_code, 
-                },
-                fallback_subject="Enrollment Payment Successful",
-                fallback_message=(
-                    f"Hi {enrollment.full_name}, your enrollment payment was successful.\n\n"
-                    f"Here is your SECRET LOGIN CODE: {secret_code}\n\n"
-                    "You can now log in to access your dashboard."
-                )
-            )
-        except Exception as e:
-            print("⚠️ Email sending failed:", e)
-            # Continue without raising error
+        logger.info(
+            f"Sending enrollment secret code email to {enrollment.email}"
+        )
 
-
+        send_email_async(
+            subject="Enrollment Payment Successful",
+            recipients=[enrollment.email],
+            html_message=render_to_string(
+                "emails/enrollment_payment_success.html",
+                {
+                    "name": enrollment.full_name,
+                    "program": enrollment.program,
+                    "course": enrollment.course,
+                    "secret_code": secret_code,
+                }
+            ),
+        )
         # ✅ Send payment receipt
         send_payment_receipt(enrollment)
 
@@ -530,16 +496,15 @@ def upload_bank_payment_proof(request, enrollment_id):
             enrollment.save()
 
             # Send acknowledgement email
-            send_mail(
+            send_email_async(
                 subject='Payment Proof Received',
                 message=(
                     f"Dear {enrollment.full_name},\n\n"
                     "We have received your bank transfer proof for the ₦2,500 enrollment fee. "
                     "We will verify the payment and send you your secret code shortly."
                 ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[enrollment.email],
-                fail_silently=False,
+                recipients=[enrollment.email],       # ✅ corrected parameter name
+                fail_silently=True,
             )
 
             messages.success(request, "Proof uploaded. We will verify and send your secret code via email soon.")
@@ -656,7 +621,12 @@ Your access has been granted. Use your secret login code to log in.
 Best regards,
 STEM CodeMaster Team
 """
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+    send_email_async(
+        subject=subject,
+        message=body,
+        recipients=[enrollment.email],  # ✅ corrected
+        fail_silently=True,  
+    )
 
 
 #----payment_receipt_confirmation------
@@ -1017,7 +987,7 @@ def send_payment_receipt(enrollment):
 
   
     # ✅ Send payment receipt email only (no temp password)
-    send_mail(
+    send_email_async(
         subject="Course Payment Successful – Receipt",
         message=(
             f"Dear {enrollment.full_name},\n\n"
@@ -1026,8 +996,8 @@ def send_payment_receipt(enrollment):
             "-- STEM CodeMaster Team"
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[enrollment.email],
-        fail_silently=False,
+        recipients=[enrollment.email],  # ✅ production-ready parameter
+        fail_silently=True,
     )
 
 #---------------------------4RD PART END HERE----------------------------
@@ -1199,7 +1169,7 @@ Our team will review and respond shortly.
 """
                 )
             except Exception:
-                send_mail(
+                send_email_async(
                     subject="✅ Complaint Received",
                     message=f"""
 Hello {request.user.get_full_name() or request.user.username},
@@ -1211,7 +1181,7 @@ We have received your complaint:
 Our team will review and respond shortly.
 """,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[request.user.email],
+                    recipient=[request.user.email],
                     fail_silently=True,
                 )
 
@@ -1235,7 +1205,7 @@ Complaint:
 """
                 )
             except Exception:
-                send_mail(
+                send_email_async(
                     subject=f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}",
                     message=f"""
 A new complaint was submitted.
@@ -1247,7 +1217,7 @@ Complaint:
 "{complaint.message}"
 """,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[admin_email],
+                    recipient=[admin_email],
                     fail_silently=True,
                 )
 

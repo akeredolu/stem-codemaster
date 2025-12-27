@@ -3,9 +3,11 @@ from django.shortcuts import render, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
+#from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
+
+from main.utils.email_service import send_email_async
 
 from .forms import AdminBroadcastForm
 from .models import Notification, StudentCourse, Material, Assignment, LiveSession, Course
@@ -59,11 +61,11 @@ def admin_broadcast_center(request):
 
                 # Send Email
                 try:
-                    send_mail(
+                    send_email_async(
                         subject=title,
                         message=strip_tags(message),
                         from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[user.email],
+                        recipient=[user.email],
                         fail_silently=True,
                     )
                 except Exception as e:

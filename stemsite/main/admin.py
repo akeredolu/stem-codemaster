@@ -9,7 +9,6 @@ from chat.models import ChatMessage
 from django.conf import settings
 from django.contrib import admin
 from .models import SiteSetting
-from django.core.mail import send_mail
 from .models import Enrollment
 from django.utils import timezone
 
@@ -86,7 +85,7 @@ def mark_enrollment_paid(self, request, queryset):
                         "Best regards,\n"
                         "STEM CodeMaster Team"
                     )
-                    send_mail(
+                    send_email_async(
                         subject,
                         message,
                         settings.DEFAULT_FROM_EMAIL,
@@ -133,7 +132,7 @@ Use this code to log in via the secret login page.
 Best regards,  
 STEM CodeMaster Team
 """
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [enrollment.email], fail_silently=False)
+        send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [enrollment.email], fail_silently=False)
 
 
 
@@ -154,11 +153,11 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'subject')
     search_fields = ('name', 'subject')
 
-
 # main/admin.py
 
+#from django.core.mail import send_mail
+from main.utils.email_service import send_email_async
 
-from django.core.mail import send_mail
 from django.conf import settings
 from .models import CoursePayment
 from main.utils.email_utils import send_templated_email  # if you use it
@@ -211,7 +210,7 @@ class CoursePaymentAdmin(admin.ModelAdmin):
             "You now have full access to your learning materials.\n\n"
             "Thank you for choosing STEM CodeMaster!"
         )
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email], fail_silently=True)
+        send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email], fail_silently=True)
 
     def verify_payments(self, request, queryset):
         updated = 0
@@ -254,7 +253,7 @@ class CoursePaymentAdmin(admin.ModelAdmin):
                         fallback_message=message
                     )
                 except Exception:
-                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
+                    send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
 
         self.message_user(
             request,
@@ -288,7 +287,7 @@ class CoursePaymentAdmin(admin.ModelAdmin):
                         fallback_message=message
                     )
                 except Exception:
-                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
+                    send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
 
         self.message_user(
             request,
@@ -577,24 +576,30 @@ class EnrollmentAdmin(admin.ModelAdmin):
     def send_secret_code_email(self, enrollment, code):
         subject = "Your STEM CodeMaster Secret Code"
         message = f"""
-Hello {enrollment.full_name},
+    Hello {enrollment.full_name},
 
-✅ Your enrollment has been confirmed.
+✅  Your enrollment has been confirmed.
 
-Here is your secret login code: {code}
+    Here is your secret login code: {code}
 
-Use this code to log in via the secret login page.
+    Use this code to log in via the secret login page.
 
-Best regards,  
-STEM CodeMaster Team
-"""
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [enrollment.email], fail_silently=False)
-    
+    Best regards,  
+    STEM CodeMaster Team
+    """
+        send_email_async(
+            subject=subject,
+            message=message,
+            recipients=[enrollment.email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            fail_silently=False
+        )
+
 
 #-------------Assignment---------------
 # main/admin.py
 
-from django.core.mail import send_mail
+
 from django.conf import settings
 from .models import Assignment, Notification
 from .forms import AssignmentAdminForm
@@ -615,39 +620,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-
-        # Only send notifications when recipients are chosen
-        if form.cleaned_data.get('recipients'):
-            recipients = form.cleaned_data['recipients']
-            for student in recipients:
-                # Create dashboard notification
-                Notification.objects.create(
-                    student=student,
-                    notif_type='assignment',
-                    title=f"New Assignment: {obj.title}",
-                    message=f"You have a new assignment titled '{obj.title}' for {obj.course.title}. Check your dashboard for details.",
-                    obj_id=obj.id
-                )
-
-                # Send email to student
-                if student.email:
-                    send_mail(
-                        subject=f"New Assignment: {obj.title}",
-                        message=(
-                            f"Dear {student.get_full_name() or student.username},\n\n"
-                            f"You have received a new assignment for the course '{obj.course.title}'.\n\n"
-                            f"Title: {obj.title}\n"
-                            f"Due Date: {obj.due_date}\n\n"
-                            f"Instructions:\n{obj.instructions}\n\n"
-                            f"Please log in to your student dashboard to download and complete it.\n\n"
-                            f"Best regards,\nSTEM CodeMaster"
-                        ),
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[student.email],
-                        fail_silently=True,
-                    )
-
-            self.message_user(request, f"✅ Assignment '{obj.title}' sent to {recipients.count()} student(s).", messages.SUCCESS)
+        # No more manual notifications/emails here
 
 
 #-----------Assignment Submission----------------
@@ -699,7 +672,7 @@ class MaterialAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         # Run notification AFTER save completes (avoid DB lock)
-        transaction.on_commit(lambda: obj.send_material_notification())
+        #transaction.on_commit(lambda: obj.send_material_notification())
 
 
 # ✅ Register
@@ -756,7 +729,7 @@ from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from .models import Timetable, GlobalTimetable
 from main.models import Notification, Enrollment
-from .utils.email_reminders import send_html_email
+
 
 # ---------- Student-specific Timetable ----------
 @admin.register(Timetable)
