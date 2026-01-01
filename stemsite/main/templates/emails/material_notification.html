@@ -4,14 +4,39 @@
     <meta charset="utf-8">
     <title>New Material Added</title>
 </head>
-<body>
-    <h2>Hello {{ student.full_name }},</h2>
-    <p>New material has been added to your course: <strong>{{ material.course }}</strong>.</p>
-    <p><strong>Material Title:</strong> {{ material.title }}</p>
-    <p>Description: {{ material.description|default:"No description provided." }}</p>
-    <p>Please log in to your dashboard to access the material.</p>
-    <hr>
-    <p>-- STEM CodeMaster Team</p>
+<body style="font-family: Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 20px;">
+        <h2>Hello {{ student_name }},</h2>
+
+        <p>New material has been added to your course: <strong>{{ course_name }}</strong>.</p>
+
+        <table style="width:100%; border-collapse: collapse; margin: 15px 0;">
+            <tr>
+                <td style="padding: 6px 0;"><strong>Material Title:</strong></td>
+                <td>{{ material_title }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0;"><strong>Description:</strong></td>
+                <td>{{ material_description }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0;"><strong>Uploaded On:</strong></td>
+                <td>{{ uploaded_on }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0;"><strong>Instructor:</strong></td>
+                <td>{{ instructor_name }}</td>
+            </tr>
+        </table>
+
+        <p>Please log in to your dashboard to access the material.</p>
+
+        <hr style="margin: 30px 0; border-top: 1px solid #eee;">
+        <p style="font-size: 13px; color: #666;">
+            -- STEM CodeMaster Team<br>
+            <em>Empowering Students Through Technology</em>
+        </p>
+    </div>
 </body>
 </html>
 

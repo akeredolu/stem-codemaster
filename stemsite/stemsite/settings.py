@@ -66,8 +66,8 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='9e5404001@smtp-brevo.com')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='441cae9f7db479307d9459745fc5d72bdf50de58db927cfd4a90074dceece5ff-cG1cLMEwzCzX7V3r')
 
 # Verified sender email (can be Gmail for now)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='STEM CodeMaster <code247.me@gmail.com>')
-SERVER_EMAIL = env('SERVER_EMAIL', default='STEM CodeMaster <code247.me@gmail.com>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='code247.me@gmail.com')
+SERVER_EMAIL = env('SERVER_EMAIL', default='code247.me@gmail.com')
 
 # Optional: email for contact form notifications
 CONTACT_NOTIFICATION_EMAIL = env('CONTACT_NOTIFICATION_EMAIL', default=EMAIL_HOST_USER)
@@ -112,6 +112,20 @@ MIDDLEWARE = [
     'main.middleware.ForcePasswordChangeMiddleware',
 
 ]
+
+
+# Celery settings
+CELERY_BROKER_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+TIME_ZONE = 'Africa/Lagos'      # Django default timezone
+USE_TZ = True  
+# IMPORTANT
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_ENABLE_UTC = True
+CELERY_TIMEZONE = TIME_ZONE
 
 
 ROOT_URLCONF = 'stemsite.urls'

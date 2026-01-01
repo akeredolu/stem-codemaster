@@ -11,7 +11,9 @@ from django.contrib import admin
 from .models import SiteSetting
 from .models import Enrollment
 from django.utils import timezone
+from django.utils.timezone import localtime
 
+from main.email_utils import send_email_async, send_plain_email_async
 from .models import *
 User = get_user_model()
 
@@ -85,11 +87,10 @@ def mark_enrollment_paid(self, request, queryset):
                         "Best regards,\n"
                         "STEM CodeMaster Team"
                     )
-                    send_email_async(
+                    send_plain_email_async(
                         subject,
                         message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [enrollment.email],
+                        recipients=[enrollment.email],
                         fail_silently=False,
                     )
 
@@ -132,7 +133,13 @@ Use this code to log in via the secret login page.
 Best regards,  
 STEM CodeMaster Team
 """
-        send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [enrollment.email], fail_silently=False)
+        
+        send_plain_email_async(
+        subject=subject,
+        message=message,
+        recipients=[enrollment.email],  # ✅ explicit parameter
+        fail_silently=False,
+    )
 
 
 
@@ -154,9 +161,6 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     search_fields = ('name', 'subject')
 
 # main/admin.py
-
-#from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
 
 from django.conf import settings
 from .models import CoursePayment
@@ -210,8 +214,14 @@ class CoursePaymentAdmin(admin.ModelAdmin):
             "You now have full access to your learning materials.\n\n"
             "Thank you for choosing STEM CodeMaster!"
         )
-        send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email], fail_silently=True)
-
+        
+        send_plain_email_async(
+        subject=subject,
+        message=message,
+        recipients=[payment.enrollment.email],  # ✅ explicit
+        fail_silently=True,
+    )
+        
     def verify_payments(self, request, queryset):
         updated = 0
         for payment in queryset:
@@ -245,16 +255,24 @@ class CoursePaymentAdmin(admin.ModelAdmin):
                     "Please complete your payment to regain access."
                 )
                 try:
-                    send_templated_email(
-                        payment.enrollment.user,
+                    
+                        # Preferred: send templated email if possible
+                    send_plain_email_async(
+                        to_email=payment.enrollment.user,
                         template_name="dashboard_block_notification",
                         context={"payment": payment},
                         fallback_subject=subject,
-                        fallback_message=message
+                        fallback_message=message,
                     )
                 except Exception:
-                    send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
-
+                    
+                    send_plain_email_async(
+                        subject=subject,
+                        message=message,
+                        recipients=[payment.enrollment.email],
+                        fail_silently=True,
+                    )
+                    
         self.message_user(
             request,
             f"✅ {updated} student(s) dashboard(s) blocked successfully.",
@@ -279,16 +297,24 @@ class CoursePaymentAdmin(admin.ModelAdmin):
                     "has been restored by the admin. You can now continue learning."
                 )
                 try:
-                    send_templated_email(
-                        payment.enrollment.user,
+                    s
+                    send_plain_email_async(
+                        to_email=payment.enrollment.user,
                         template_name="dashboard_unblock_notification",
                         context={"payment": payment},
                         fallback_subject=subject,
-                        fallback_message=message
+                        fallback_message=message,
                     )
                 except Exception:
-                    send_email_async(subject, message, settings.DEFAULT_FROM_EMAIL, [payment.enrollment.email])
-
+                    
+                        # Fallback to plain text email
+                    send_plain_email_async(
+                        subject=subject,
+                        message=message,
+                        recipients=[payment.enrollment.email],
+                        fail_silently=True,
+                    
+                    )
         self.message_user(
             request,
             f"✅ {updated} student(s) dashboard(s) unblocked successfully.",
@@ -390,7 +416,7 @@ class AdminMessageAdmin(admin.ModelAdmin):
 
                     # 3️⃣ Send Email
                     send_broadcast_email(
-                        recipient_email=student.email,
+                        recipients_email=student.email,
                         subject=f"New Message: {title}",
                         context={"title": title, "content": message_text}
                     )
@@ -479,7 +505,7 @@ def send_custom_notification(modeladmin, request, queryset):
 
                 # Send email notification
                 send_broadcast_email(
-                    recipient_email=student.email,
+                    s_email=student.email,
                     subject=title_final,
                     context={"title": title_final, "content": message_final}
                 )
@@ -587,14 +613,14 @@ class EnrollmentAdmin(admin.ModelAdmin):
     Best regards,  
     STEM CodeMaster Team
     """
-        send_email_async(
+        
+            # Send plain email asynchronously
+        send_plain_email_async(
             subject=subject,
             message=message,
-            recipients=[enrollment.email],
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipients=[enrollment.email],  # ✅ production-ready parameter
             fail_silently=False
         )
-
 
 #-------------Assignment---------------
 # main/admin.py
@@ -645,11 +671,10 @@ class AssignmentSubmissionAdmin(admin.ModelAdmin):
 #-----------------Material------------
 from django.contrib import admin
 from django import forms
-from django.db import transaction
 from .models import Material
 
 
-# ✅ Admin form
+# ---------- Admin form ----------
 class MaterialAdminForm(forms.ModelForm):
     class Meta:
         model = Material
@@ -662,7 +687,7 @@ class MaterialAdminForm(forms.ModelForm):
         }
 
 
-# ✅ Admin model configuration
+# ---------- Admin configuration ----------
 class MaterialAdmin(admin.ModelAdmin):
     form = MaterialAdminForm
     list_display = ('title', 'course', 'uploaded_at')
@@ -671,125 +696,222 @@ class MaterialAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        # Run notification AFTER save completes (avoid DB lock)
-        #transaction.on_commit(lambda: obj.send_material_notification())
+        # Dashboard notifications & emails handled in signals
+        # transaction.on_commit can be used if needed:
+        # transaction.on_commit(lambda: obj.send_material_notification())
 
 
-# ✅ Register
+# ---------- Register ----------
 admin.site.register(Material, MaterialAdmin)
 
 
 #---------Live Session Admin-----------
-from django.contrib.contenttypes.models import ContentType
-from main.models import LiveSession, Enrollment, Notification
-from main.utils.email_reminders import send_upcoming_live_session_reminders, send_html_email
-
 from datetime import timedelta
+from django.contrib import admin, messages
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import redirect
+from django.urls import path
+from main.models import LiveSession, Notification, Enrollment
+
 
 @admin.register(LiveSession)
 class LiveSessionAdmin(admin.ModelAdmin):
     list_display = (
-        "title", "course", "start_time", "end_time",
-        "reminder_24hr_sent", "reminder_sent", "reminder_1hr_sent"
+        "title",
+        "course",
+        "start_time",
+        "end_time",
+        "reminder_24hr_sent",
+        "reminder_1hr_sent",
     )
     list_filter = ("course", "start_time")
     search_fields = ("title", "course__title")
     ordering = ("-start_time",)
-    change_list_template = "admin/livesession_changelist.html"
+    filter_horizontal = ("students",)
 
-    # <<< Add this line to allow selecting students in admin >>
-    filter_horizontal = ('students',)
-
+    # Optional admin action URL (reminders only)
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
             path(
                 "send-reminders/",
                 self.admin_site.admin_view(self.send_reminders_view),
-                name="send_livesession_reminders"
+                name="send_livesession_reminders",
             ),
         ]
         return custom_urls + urls
 
     def send_reminders_view(self, request):
+        from main.tasks import send_upcoming_live_session_reminders
         send_upcoming_live_session_reminders()
-        self.message_user(request, "✅ Live session reminders sent successfully!", level=admin.messages.SUCCESS)
+        self.message_user(
+            request,
+            "✅ Live session reminders queued successfully!",
+            level=messages.SUCCESS,
+        )
         return redirect("..")
 
     def save_model(self, request, obj, form, change):
-        # Auto-fill end_time if not manually set
+        # Auto-fill end_time if missing
         if not obj.end_time and obj.start_time:
             obj.end_time = obj.start_time + timedelta(hours=1)
+
         super().save_model(request, obj, form, change)
 
-        
+        # Only notify on creation
+        if change:
+            return
+
+        # Students assigned manually
+        assigned_students = obj.students.all()
+
+        # Students enrolled in the course
+        enrolled_ids = Enrollment.objects.filter(
+            course=obj.course, is_active=True
+        ).values_list("user", flat=True)
+        enrolled_students = obj.students.model.objects.filter(id__in=enrolled_ids)
+
+        # Combine unique students
+        students = set(list(assigned_students) + list(enrolled_students))
+
+        # Dashboard notifications ONLY (no email here)
+        for student in students:
+            Notification.objects.create(
+                student=student,
+                notif_type="live_session",
+                title=f"New Live Session: {obj.title}",
+                message=f"A new live session '{obj.title}' has been scheduled.",
+                obj_content_type=ContentType.objects.get_for_model(LiveSession),
+                obj_id=obj.id,
+            )
+
+        # Admin feedback
+        self.message_user(
+            request,
+            "Live session created and dashboard notifications sent.",
+            level=messages.SUCCESS,
+        )
+
 
 #------------------Schedule and Time Table--------------
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from .models import Timetable, GlobalTimetable
-from main.models import Notification, Enrollment
+from main.models import Notification
 
 
 # ---------- Student-specific Timetable ----------
 @admin.register(Timetable)
 class TimetableAdmin(admin.ModelAdmin):
-    list_display = ("student", "course", "date", "start_time", "end_time", "instructor", "join_link")
+    list_display = (
+        "student",
+        "course",
+        "date",
+        "start_time",
+        "end_time",
+        "instructor",
+        "join_link",
+    )
     list_filter = ("date", "course", "student")
     search_fields = ("student__username", "course", "instructor")
     ordering = ("date", "start_time")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if not change:
-            student = obj.student
-            # Dashboard notification
-            Notification.objects.create(
-                student=student,
-                notif_type='timetable',
-                title=f"New Class Scheduled: {obj.course}",
-                message=f"Class '{obj.course}' scheduled on {obj.date} from {obj.start_time} to {obj.end_time}. Instructor: {obj.instructor}.",
-                obj_content_type=ContentType.objects.get_for_model(Timetable),
-                obj_id=obj.id
-            )
-            # Email notification
-            send_html_email(
-                subject=f"New Class Scheduled: {obj.course}",
-                to_email=student.email,
-                context={"student": student, "timetable": obj},
-                template="emails/timetable_notification.html"
-            )
-            self.message_user(request, f"Notification sent to {student.username}", messages.SUCCESS)
 
-# ---------- Global Timetable ----------
+        # Only act on newly created timetable entries
+        if change:
+            return
+
+        student = getattr(obj, "student", None)
+        if not student:
+            return
+
+        # Dashboard notification ONLY
+        Notification.objects.create(
+            student=student,
+            notif_type="timetable",
+            title=f"New Class Scheduled: {obj.course}",
+            message=(
+                f"Class '{obj.course}' scheduled on {obj.date} "
+                f"from {obj.start_time} to {obj.end_time}. "
+                f"Instructor: {obj.instructor}."
+            ),
+            obj_content_type=ContentType.objects.get_for_model(Timetable),
+            obj_id=obj.id,
+        )
+
+        # Admin feedback message
+        student_name = getattr(student, "get_full_name", lambda: str(student))()
+        self.message_user(
+            request,
+            f"Timetable created successfully for {student_name}.",
+            messages.SUCCESS,
+        )
+
+
+# ------------------- Global Timetable -------------------
 @admin.register(GlobalTimetable)
 class GlobalTimetableAdmin(admin.ModelAdmin):
     list_display = ("course", "date", "start_time", "end_time", "instructor", "join_link")
     list_filter = ("date", "course")
-    search_fields = ("course__title", "instructor")
+    search_fields = ("course__title",)
     ordering = ("date", "start_time")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        if not change:
-            # Notify all enrolled students
-            enrollments = Enrollment.objects.filter(course=obj.course)
-            for enr in enrollments:
-                student = enr.user
-                Notification.objects.create(
-                    student=student,
-                    notif_type='schedule',
-                    title=f"New Class Scheduled: {obj.course.title}",
-                    message=f"Class '{obj.course.title}' scheduled on {obj.date} from {obj.start_time} to {obj.end_time}. Instructor: {obj.instructor}.",
-                    obj_content_type=ContentType.objects.get_for_model(GlobalTimetable),
-                    obj_id=obj.id
-                )
-                send_html_email(
-                    subject=f"New Class Scheduled: {obj.course.title}",
-                    to_email=student.email,
-                    context={"student": student, "schedule": obj},
-                    template="emails/schedule_notification.html"
-                )
+
+        if change:
+            return  # Only notify on new timetable entries
+
+        enrollments = Enrollment.objects.filter(course=obj.course).select_related("user")
+        notifications_sent = 0
+
+        for enr in enrollments:
+            student = getattr(enr, "user", None)
+            if not student or not getattr(student, "email", None):
+                continue
+
+            # Dashboard notification
+            Notification.objects.create(
+                student=student,
+                notif_type="schedule",
+                title=f"New Class Scheduled: {obj.course}",
+                message=(
+                    f"Class '{getattr(obj.course, 'title', str(obj.course))}' "
+                    f"scheduled on {obj.date} from {obj.start_time} to {obj.end_time}. "
+                    f"Instructor: {obj.instructor}."
+                ),
+                obj_content_type=ContentType.objects.get_for_model(GlobalTimetable),
+                obj_id=obj.id,
+            )
+
+            # Safe student name
+            student_name = getattr(student, "get_full_name", lambda: str(student))()
+
+            # Email notification
+            send_email_async(
+                to_email=student.email,
+                subject="New Class Schedule Added",
+                template_name="emails/timetable_notification.html",
+                context={
+                    "student_name": student_name,
+                    "course_title": getattr(obj.course, "title", str(obj.course)),
+                    "class_date": obj.date,
+                    "start_time": obj.start_time,
+                    "end_time": obj.end_time,
+                    "instructor_name": getattr(obj.instructor, "get_full_name", lambda: str(obj.instructor))(),
+                    "join_link": obj.join_link,
+                },
+            )
+
+            notifications_sent += 1
+
+        self.message_user(
+            request,
+            f"Notifications sent to {notifications_sent} student(s) for {obj.course}.",
+            messages.SUCCESS,
+        )
 
 
 #----------About and Program Sections------------------

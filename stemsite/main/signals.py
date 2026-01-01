@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async, send_plain_email_async
 from django.contrib.auth import get_user_model
 
 from .models import (
@@ -28,17 +28,13 @@ logger = logging.getLogger(__name__)
 # -------------------------------
 def send_student_email(to_email, subject, template_name, context):
     try:
-        html_message = render_to_string(template_name, context)
-        plain_message = strip_tags(html_message)
         send_email_async(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [to_email],
-            html_message=html_message,
-            fail_silently=False,  # set to False for testing
+            to_email=to_email,
+            subject=subject,
+            template_name=template_name,
+            context=context
         )
-        logger.info(f"Email sent to {to_email} with subject: {subject}")
+        logger.info(f"Email queued to {to_email} with subject: {subject}")
     except Exception as e:
         logger.error(f"Email sending failed to {to_email}: {e}")
 
@@ -49,16 +45,19 @@ def send_student_email(to_email, subject, template_name, context):
 @receiver(post_save, sender=Assignment)
 def notify_assignment(sender, instance, created, **kwargs):
     if not created:
-        return  # Only notify on new assignment
+        return
 
-    enrollments = Enrollment.objects.filter(course=instance.course, is_active=True)
+    enrollments = Enrollment.objects.filter(
+        course=instance.course,
+        is_active=True
+    ).select_related("user")
 
     for enroll in enrollments:
         user = enroll.user
         if not user or not user.email:
             continue
 
-        # Create dashboard notification
+        # Dashboard notification (SYNC, safe)
         Notification.objects.create(
             student=user,
             notif_type="assignment",
@@ -68,37 +67,59 @@ def notify_assignment(sender, instance, created, **kwargs):
             obj_id=instance.id,
         )
 
-        # Render email and send asynchronously
-        html_message = render_to_string(
-            "emails/assignment_notification.html",
-            {"student": user, "assignment": instance},
-        )
-
+        # ✅ ONLY pass JSON-safe data to Celery
         send_email_async(
+            to_email=user.email,
             subject=f"New Assignment: {instance.title}",
-            recipients=[user.email],
-            html_message=html_message,
-            fail_silently=True,  # prevents breaking if email fails
+            template_name="emails/assignment_notification.html",
+            context={
+                "student_name": user.get_full_name(),
+                "assignment_title": instance.title,
+                "course_title": instance.course.title,
+                "due_date": instance.due_date,
+            },
         )
-
 
 # ======================================================
 # 2️⃣ MATERIAL NOTIFICATION
 # ======================================================
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
+from django.utils.timezone import localtime
+from main.models import Material, Notification, Enrollment
+from main.email_utils import send_email_async
+
+User = get_user_model()
+
+
 @receiver(post_save, sender=Material)
 def notify_material(sender, instance, created, **kwargs):
     if not created:
-        return
+        return  # Only notify on creation
 
-    enrollments = Enrollment.objects.filter(course=instance.course, is_active=True)
+    # Get all active enrolled students for the course
+    enrolled_user_ids = Enrollment.objects.filter(
+        course=instance.course,
+        is_active=True
+    ).values_list("user", flat=True)
+    students = User.objects.filter(id__in=enrolled_user_ids)
 
-    for enroll in enrollments:
-        user = enroll.user
-        if not user or not user.email:
+    # Format Uploaded On with time
+    uploaded_on = localtime(instance.uploaded_at).strftime("%A, %b %d, %Y %H:%M") \
+        if instance.uploaded_at else "Not specified"
+
+    # Instructor name (TBA since not in model)
+    instructor_name = "TBA"
+
+    for student in students:
+        if not getattr(student, "email", None):
             continue
 
+        # Dashboard notification
         Notification.objects.create(
-            student=user,
+            student=student,
             notif_type="material",
             title=f"New Material: {instance.title}",
             message=f"New learning material '{instance.title}' is available.",
@@ -106,58 +127,107 @@ def notify_material(sender, instance, created, **kwargs):
             obj_id=instance.id,
         )
 
+        # Email notification
         send_email_async(
-            subject=f"New Material: {instance.title}",
-            recipients=[user.email],
-            html_message=render_to_string(
-                "emails/material_notification.html",
-                {
-                    "student": user,
-                    "material": instance,
-                },
-            ),
-        )
+            to_email=student.email,
+            subject=f"New Material Added: {instance.title}",
+            template_name="emails/material_notification.html",
+            context={
+                "student_name": student.get_full_name() if hasattr(student, "get_full_name") else str(student),
+                "course_name": str(instance.course),
+                "material_title": instance.title,
+                "material_description": instance.description or "No description provided.",
+                "uploaded_on": uploaded_on,
+                "instructor_name": instructor_name,
+            },
+        )        
 
 # ======================================================
 # 3️⃣ LIVE SESSION NOTIFICATION
 # ======================================================
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import localtime
+from django.contrib.auth import get_user_model
+from main.models import LiveSession, Notification, Enrollment
+from main.email_utils import send_email_async
+
+User = get_user_model()
+
 @receiver(post_save, sender=LiveSession)
 def notify_live_session(sender, instance, created, **kwargs):
     if not created:
-        return
+        return  # only notify on creation
 
+    # Students assigned manually
     assigned_students = instance.students.all()
-    enrolled_students = Enrollment.objects.filter(course=instance.course).values_list("user", flat=True)
 
-    students = set(list(assigned_students) + list(User.objects.filter(id__in=enrolled_students)))
+    # Students enrolled in course
+    enrolled_ids = Enrollment.objects.filter(course=instance.course, is_active=True).values_list("user", flat=True)
+    enrolled_students = User.objects.filter(id__in=enrolled_ids)
+
+    # Combine unique students
+    students = set(list(assigned_students) + list(enrolled_students))
+
+    # Use join_link safely
+    join_link = getattr(instance, "join_link", "") or "#"
 
     for student in students:
-        if not student.email:
+        if not getattr(student, "email", None):
             continue
 
-        send_email_async(
-            subject=f"New Live Session: {instance.title}",
-            recipients=[student.email],
-            html_message=render_to_string(
-                "emails/livesession_notification.html",
-                {
-                    "student": student,
-                    "session": instance,
-                },
+        # Safe student name
+        student_name = student.get_full_name() if hasattr(student, "get_full_name") else str(student)
+
+        # Dashboard notification with join link
+        Notification.objects.create(
+            student=student,
+            notif_type="live_session",
+            title=f"New Live Session: {instance.title}",
+            message=(
+                f"A new live session '{instance.title}' has been scheduled.\n"
+                f"Click here to join: {join_link}"
             ),
+            obj_content_type=ContentType.objects.get_for_model(LiveSession),
+            obj_id=instance.id,
         )
 
+        # Email notification
+        send_email_async(
+            to_email=student.email,
+            subject=f"New Live Session Scheduled: {instance.title}",
+            template_name="emails/livesession_notification.html",
+            context={
+                "student_name": student_name,
+                "course_name": str(instance.course),
+                "session_title": instance.title,
+                "session_description": instance.description or "No description provided.",
+                "start_time": localtime(instance.start_time).strftime("%A, %b %d, %Y %H:%M") if instance.start_time else "",
+                "end_time": localtime(instance.end_time).strftime("%A, %b %d, %Y %H:%M") if instance.end_time else "Not specified",
+                "join_link": join_link,
+                "instructor_name": str(getattr(instance, "instructor", "")) or "TBA",
+            },
+        )
+
+        
+
 # ======================================================
-# CLASS TIMETABLE NOTIFICATION
+# CLASS TIMETABLE / SCHEDULE NOTIFICATION
 # ======================================================
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.contenttypes.models import ContentType
+from main.models import Timetable, Notification
+from main.email_utils import send_email_async
+
 @receiver(post_save, sender=Timetable)
 def notify_timetable(sender, instance, created, **kwargs):
     if not created:
         return
 
     user = instance.student
-
-    if not user or not user.email:
+    if not user or not getattr(user, "email", None):
         return
 
     # 1️⃣ Dashboard notification
@@ -170,20 +240,21 @@ def notify_timetable(sender, instance, created, **kwargs):
         obj_id=instance.id,
     )
 
-    # 2️⃣ Email notification
-    html_message = render_to_string(
-        "emails/timetable_notification.html",
-        {
-            "student": user,
-            "timetable": instance,
+    # 2️⃣ Email notification (JSON-safe)
+    send_email_async(
+        to_email=user.email,
+        subject="New Class Schedule Added",
+        template_name="emails/timetable_notification.html",
+        context={
+            "student_name": user.get_full_name() if callable(getattr(user, "get_full_name", None)) else str(user),
+            "course_title": str(instance.course),
+            "class_date": instance.date.strftime("%A, %b %d, %Y") if getattr(instance, "date", None) else "",
+            "start_time": instance.start_time.strftime("%H:%M") if getattr(instance, "start_time", None) else "",
+            "end_time": instance.end_time.strftime("%H:%M") if getattr(instance, "end_time", None) else "",
+            "instructor_name": str(getattr(instance, "instructor", "")),
         },
     )
 
-    send_email_async(
-        subject="New Class Timetable Added",
-        recipients=[user.email],
-        html_message=html_message,
-    )
 
 
 # ======================================================
@@ -208,57 +279,16 @@ def notify_admin_message(sender, instance, created, **kwargs):
     )
 
     send_email_async(
+        to_email=student.email,
         subject=f"Message from Admin: {instance.title}",
-        recipients=[student.email],
-        html_message=render_to_string(
-            "emails/admin_message_email.html",
-            {
-                "title": instance.title,
-                "content": instance.message,
-                "student_name": student.get_full_name() or student.username,
-            },
-        ),
-    )
-    
-    
-# ======================================================
-# CLASS SCHEDULE NOTIFICATION
-# ======================================================
-@receiver(post_save, sender=Timetable)
-def notify_schedule(sender, instance, created, **kwargs):
-    if not created:
-        return
-
-    user = instance.student
-
-    if not user or not user.email:
-        return
-
-    # 1️⃣ Dashboard notification
-    Notification.objects.create(
-        student=user,
-        notif_type="schedule",
-        title="New Class Schedule",
-        message=f"A new class schedule has been added for {instance.course}.",
-        obj_content_type=ContentType.objects.get_for_model(Timetable),
-        obj_id=instance.id,
-    )
-
-    # 2️⃣ Email notification
-    html_message = render_to_string(
-        "emails/schedule_notification.html",
-        {
-            "student": user,
-            "timetable": instance,
+        template_name="emails/admin_message_email.html",
+        context={
+            "title": instance.title,
+            "content": instance.message,
+            "student_name": student.get_full_name() or student.username,
         },
     )
-
-    send_email_async(
-        subject="New Class Schedule Added",
-        recipients=[user.email],
-        html_message=html_message,
-    )
-
+    
 # ======================================================
 # 6️⃣ SECRET CODE GENERATION
 # ======================================================
@@ -286,7 +316,7 @@ def generate_secret_code(sender, instance, created, **kwargs):
         logger.error(f"Failed to generate secret code for enrollment {instance.id}: {e}")
         return
 
-    send_student_email(
+    send_plain_email_async(
         to_email=instance.email,
         subject=f"Your STEM CodeMaster Secret Code{' (Auto)' if reason=='Bank transfer proof uploaded' else ''}",
         template_name="emails/secret_code_email.html",

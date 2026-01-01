@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.template import Template, Context
 #from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async
 
 from django.views.decorators.csrf import csrf_exempt
 
@@ -44,7 +44,7 @@ from .forms import (
 )
 
 #from .utils import email_notifications
-from main.utils.email_utils import send_templated_email  # ✅ make sure this is imported
+from main.email_utils import send_email_async, send_plain_email_async
 from main.utils.email_utils import send_payment_receipt
 
 from chat.models import ChatMessage, ChatRoom
@@ -101,17 +101,19 @@ def home(request):
                     "Your message:\n"
                     f"{contact.message}\n\n"
                     "-STEM Codemaster Team."
-                )
-
-            send_email_async(
+                )         
+                         
+             # Send auto-reply to user
+            send_plain_email_async(
                 subject=subject,
                 message=message,
                 recipients=[contact.email],
                 fail_silently=True,
             )
-
+            
             # Notify admin
-            send_email_async(
+          
+            send_plain_email_async(
                 subject=f"New Contact Message from {contact.name}",
                 message=(
                     f"You received a new contact message:\n\n"
@@ -266,7 +268,7 @@ def enroll_now(request):
             )
 
             # Send email asynchronously
-            send_email_async(
+            send_plain_email_async(
                 subject=subject,
                 message=message,
                 recipients=[enrollment.email]
@@ -441,18 +443,17 @@ def enrolment_payment_verify(request, enrollment_id):
         )
 
         send_email_async(
+            to_email=enrollment.email,
             subject="Enrollment Payment Successful",
-            recipients=[enrollment.email],
-            html_message=render_to_string(
-                "emails/enrollment_payment_success.html",
-                {
+            template_name="emails/enrollment_payment_success.html",
+            context={
                     "name": enrollment.full_name,
                     "program": enrollment.program,
                     "course": enrollment.course,
                     "secret_code": secret_code,
-                }
-            ),
-        )
+                },
+            )
+        
         # ✅ Send payment receipt
         send_payment_receipt(enrollment)
 
@@ -496,7 +497,7 @@ def upload_bank_payment_proof(request, enrollment_id):
             enrollment.save()
 
             # Send acknowledgement email
-            send_email_async(
+            send_plain_email_async(
                 subject='Payment Proof Received',
                 message=(
                     f"Dear {enrollment.full_name},\n\n"
@@ -621,7 +622,7 @@ Your access has been granted. Use your secret login code to log in.
 Best regards,
 STEM CodeMaster Team
 """
-    send_email_async(
+    send_plain_email_async(
         subject=subject,
         message=body,
         recipients=[enrollment.email],  # ✅ corrected
@@ -987,7 +988,7 @@ def send_payment_receipt(enrollment):
 
   
     # ✅ Send payment receipt email only (no temp password)
-    send_email_async(
+    send_plain_email_async(
         subject="Course Payment Successful – Receipt",
         message=(
             f"Dear {enrollment.full_name},\n\n"
@@ -995,7 +996,6 @@ def send_payment_receipt(enrollment):
             f"Thank you for enrolling in the {enrollment.program} program at STEM CodeMaster!\n\n"
             "-- STEM CodeMaster Team"
         ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
         recipients=[enrollment.email],  # ✅ production-ready parameter
         fail_silently=True,
     )
@@ -1153,8 +1153,8 @@ def submit_complaint(request):
             # --- Notify student ---
             context_student = {"student": request.user, "complaint": complaint}
             try:
-                send_templated_email(
-                    request.user,
+                send_plain_email_async(
+                    to_email=request.user.email,
                     template_name="complaint_acknowledgment",
                     context=context_student,
                     fallback_subject="✅ Complaint Received",
@@ -1169,7 +1169,7 @@ Our team will review and respond shortly.
 """
                 )
             except Exception:
-                send_email_async(
+                send_plain_email_async(
                     subject="✅ Complaint Received",
                     message=f"""
 Hello {request.user.get_full_name() or request.user.username},
@@ -1180,8 +1180,7 @@ We have received your complaint:
 
 Our team will review and respond shortly.
 """,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient=[request.user.email],
+                    recipients=[request.user.email],
                     fail_silently=True,
                 )
 
@@ -1189,8 +1188,8 @@ Our team will review and respond shortly.
             admin_email = "code247.me@gmail.com"
             context_admin = {"student": request.user, "complaint": complaint}
             try:
-                send_templated_email(
-                    request.user,
+                send_plain_email_async(
+                    to_email=admin_email,
                     template_name="New_Complaint_Notification",
                     context=context_admin,
                     fallback_subject=f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}",
@@ -1205,7 +1204,7 @@ Complaint:
 """
                 )
             except Exception:
-                send_email_async(
+                send_plain_email_async(
                     subject=f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}",
                     message=f"""
 A new complaint was submitted.
@@ -1216,10 +1215,9 @@ Email: {request.user.email}
 Complaint:
 "{complaint.message}"
 """,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient=[admin_email],
-                    fail_silently=True,
-                )
+        recipients=[admin_email],
+        fail_silently=True,
+    )
 
             messages.success(request, "✅ Your issue has been submitted. We’ll get back to you soon.")
             return redirect('portal')

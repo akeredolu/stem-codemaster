@@ -1,7 +1,7 @@
 # services/admin.py
 from django.conf import settings
 #from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async, send_plain_email_async
 from django.urls import path, reverse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
@@ -138,7 +138,7 @@ class ServiceRequestAdmin(admin.ModelAdmin):
                 reverse("payment_page", args=[obj.id])
             )
 
-            send_email_async(
+            send_plain_email_async(
                 subject="Payment Link – STEM CodeMaster",
                 message=(
                     f"Hello {obj.name},\n\n"
@@ -148,8 +148,7 @@ class ServiceRequestAdmin(admin.ModelAdmin):
                     f"{payment_url}\n\n"
                     "Thank you."
                 ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient=[obj.email],
+                recipients=[obj.email],
                 fail_silently=True,
             )
 

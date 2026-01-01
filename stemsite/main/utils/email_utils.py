@@ -1,23 +1,31 @@
-#------------General Helper Function-----------
 # main/utils/email_utils.py
 
-#from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
+import logging
 from django.conf import settings
 from django.template import Template, Context
-from main.models import EmailTemplate
-
-from django.core.mail import EmailMessage
-
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.html import strip_tags
 from django.contrib.contenttypes.models import ContentType
-from main.models import LiveSession, StudentCourse, Notification
+from django.core.mail import EmailMultiAlternatives
+from main.tasks import send_email_task
+from main.models import (
+    EmailTemplate,
+    LiveSession,
+    StudentCourse,
+    Notification
+)
+from main.email_utils import send_email_async, send_plain_email_async
 
+logger = logging.getLogger(__name__)
 
+# -------------------------------
+# Helper: Send templated email
+# -------------------------------
 def send_templated_email(student, template_name, context, fallback_subject, fallback_message):
     """
-    Try sending using EmailTemplate in admin, otherwise send fallback.
+    Send an email using admin-defined EmailTemplate.
+    If template not found, use fallback subject/message.
     """
     try:
         template = EmailTemplate.objects.get(name=template_name)
@@ -27,171 +35,47 @@ def send_templated_email(student, template_name, context, fallback_subject, fall
         subject = fallback_subject
         body = fallback_message
 
-    send_email_async(
-        subject,
-        body,
-        settings.DEFAULT_FROM_EMAIL,
-        [student.email],
-        fail_silently=True,
-    )
+    try:
+        send_plain_email_async(
+            subject=subject,
+            message=body,
+            recipients=[student.email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            fail_silently=False,
+        )
+        logger.info(f"Email queued to {student.email} | Subject: {subject}")
+    except Exception as e:
+        logger.error(f"Failed to send email to {student.email}: {e}")
 
 
-#----------All EmailTemplate----------
-# ---------- Unified Course Payment Receipt ----------
-def send_payment_receipt(payment):
-    enrollment = payment.enrollment
-
-    context = {
-        "full_name": enrollment.full_name,
-        "email": enrollment.email,
-        "course": payment.course.title,
-        "amount": f"₦{payment.amount_paid:,.2f}",
-        "date": payment.created_at.strftime("%d %B, %Y at %I:%M %p"),
-        "payment_method": payment.get_payment_method_display(),
-        "reference": payment.reference,
-    }
-
-    # Check payment method
-    if payment.payment_method.lower() == "bank":
-        template_name = "Course_Payment_BankReceipt"
-        fallback_subject = f"Bank Transfer Payment Pending - {payment.course.title}"
-        fallback_message = f"""
-Hello {enrollment.full_name},
-
-We have received your payment request of {context['amount']} on {context['date']} 
-via Bank Transfer for the course "{context['course']}".
-
-Reference: {context['reference']}
-
-✅ Note: Your payment will be verified by our admin team shortly.
-Once confirmed, your course will be activated and you will receive another email.
-
-Thank you for your patience.
-
--- STEM CodeMaster Team
-"""
-    else:
-        template_name = "Course_Payment_Receipt"
-        fallback_subject = f"Payment Receipt - {payment.course.title}"
-        fallback_message = f"""
-Hello {enrollment.full_name},
-
-We have received your payment of {context['amount']} on {context['date']} 
-via {context['payment_method']} for the course "{context['course']}".
-
-Reference: {context['reference']}
-
-Your course is now active. 🎉
-
-You can log in to your dashboard to start learning.
-
--- STEM CodeMaster Team
-"""
-
-    # Send email using selected template
-    send_templated_email(
-        enrollment,
-        template_name,
-        context,
-        fallback_subject,
-        fallback_message
-    )
-
-
-def send_payment_failure_notification(enrollment):
-    context = {
-        "full_name": enrollment.full_name,
-    }
-
-    fallback_subject = "Payment Verification Failed"
-    fallback_message = f"""
-Hello {enrollment.full_name},
-
-Your payment could not be verified. Please try again or contact support.
-
--- STEM CodeMaster Team
-"""
-
-    send_templated_email(
-        enrollment,
-        "Payment_Failure_Notification",
-        context,
-        fallback_subject,
-        fallback_message
-    )
-
-
-def send_course_activation_notification(enrollment):
-    context = {
-        "full_name": enrollment.full_name,
-    }
-
-    fallback_subject = "Your Course Enrollment is Now Active!"
-    fallback_message = f"""
-Hello {enrollment.full_name},
-
-Your course enrollment is now active! 🎉
-
-You can log in to your dashboard to start learning.
-
--- STEM CodeMaster Team
-"""
-
-    send_templated_email(
-        enrollment,
-        "Course_Activation_Notification",
-        context,
-        fallback_subject,
-        fallback_message
-    )
-
-
-def send_password_reset_confirmation(enrollment):
-    context = {
-        "full_name": enrollment.full_name,
-    }
-
-    fallback_subject = "Password Reset Successful"
-    fallback_message = f"""
-Hello {enrollment.full_name},
-
-Your password reset was successful. You can now log in with your new password.
-
--- STEM CodeMaster Team
-"""
-
-    send_templated_email(
-        enrollment,
-        "Password_Reset_Confirmation",
-        context,
-        fallback_subject,
-        fallback_message
-    )
-
-#---------------Added----------------
-from main.utils.settings_utils import get_setting
-
-def send_payment_receipt(enrollment):
-    amount = int(get_setting("ENROLLMENT_FEE", 10000))  # fallback if not set in admin
-
-    context = {
-        "full_name": enrollment.full_name,
-        "email": enrollment.email,
-        "amount": f"₦{amount:,.0f}",  # format as ₦10,000
-        "date": enrollment.paid_at.strftime("%d %B, %Y at %I:%M %p") if enrollment.paid_at else "",
-        "payment_method": enrollment.payment_method or "Paystack",
-    }
+# -------------------------------
+# Enrollment / Payment Emails
+# -------------------------------
+def send_enrollment_payment_receipt(enrollment):
+    """
+    Send enrollment payment receipt.
+    """
+    amount = int(getattr(enrollment, "amount_paid", 10000))
+    date = getattr(enrollment, "paid_at", None)
+    date_str = date.strftime("%d %B, %Y at %I:%M %p") if date else ""
 
     fallback_subject = "Payment Receipt - STEM CodeMaster"
     fallback_message = f"""
 Hello {enrollment.full_name},
 
-We have received your enrollment fee payment of {context['amount']} on {context['date']} via {context['payment_method']}.
+We have received your enrollment fee payment of ₦{amount:,} on {date_str} via {enrollment.payment_method or 'Paystack'}.
 
 Your enrollment is now active. 🎉
 
 -- STEM CodeMaster Team
 """
+    context = {
+        "full_name": enrollment.full_name,
+        "email": enrollment.email,
+        "amount": f"₦{amount:,}",
+        "date": date_str,
+        "payment_method": enrollment.payment_method or "Paystack",
+    }
 
     send_templated_email(
         enrollment,
@@ -202,24 +86,122 @@ Your enrollment is now active. 🎉
     )
 
 
-#------------Live Session Reminder-------------
+def send_payment_failure_notification(enrollment):
+    fallback_subject = "Payment Verification Failed"
+    fallback_message = f"""
+Hello {enrollment.full_name},
+
+Your payment could not be verified. Please try again or contact support.
+
+-- STEM CodeMaster Team
+"""
+    send_templated_email(
+        enrollment,
+        "Payment_Failure_Notification",
+        {"full_name": enrollment.full_name},
+        fallback_subject,
+        fallback_message
+    )
+
+
+def send_course_activation_notification(enrollment):
+    fallback_subject = "Your Course Enrollment is Now Active!"
+    fallback_message = f"""
+Hello {enrollment.full_name},
+
+Your course enrollment is now active! 🎉
+
+You can log in to your dashboard to start learning.
+
+-- STEM CodeMaster Team
+"""
+    send_templated_email(
+        enrollment,
+        "Course_Activation_Notification",
+        {"full_name": enrollment.full_name},
+        fallback_subject,
+        fallback_message
+    )
+
+
+def send_password_reset_confirmation(enrollment):
+    fallback_subject = "Password Reset Successful"
+    fallback_message = f"""
+Hello {enrollment.full_name},
+
+Your password reset was successful. You can now log in with your new password.
+
+-- STEM CodeMaster Team
+"""
+    send_templated_email(
+        enrollment,
+        "Password_Reset_Confirmation",
+        {"full_name": enrollment.full_name},
+        fallback_subject,
+        fallback_message
+    )
+
+
+# -------------------------------
+# Secret Code Email
+# -------------------------------
+def send_secret_code_email(enrollment, code):
+    subject = "Your STEM CodeMaster Secret Code"
+    message = f"""
+Hello {enrollment.full_name},
+
+✅ Your enrollment has been confirmed.
+
+Here is your secret login code: {code}
+
+Use this code to log in via the secret login page.
+
+Best regards,  
+STEM CodeMaster Team
+"""
+    send_plain_email_async(
+        subject=subject,
+        message=message,
+        recipients=[enrollment.email],
+        fail_silently=False
+    )
+
+
+# -------------------------------
+# HTML Email Helper (async ready)
+# -------------------------------
 def send_html_email(subject, to_email, context, template):
-    html_content = render_to_string(template, context)
-    text_content = f"{context['course']} session is coming up."
+    """
+    Send HTML email synchronously.
+    Recommended: wrap in Celery for async.
+    """
+    try:
+        html_content = render_to_string(template, context)
+        text_content = strip_tags(html_content)
 
-    email = EmailMultiAlternatives(subject, text_content, 'noreply@stemcodemaster.com', [to_email])
-    email.attach_alternative(html_content, "text/html")
-    email.send()
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[to_email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        logger.info(f"HTML email sent to {to_email} | Subject: {subject}")
+    except Exception as e:
+        logger.error(f"Failed to send HTML email to {to_email}: {e}")
 
 
+# -------------------------------
+# Upcoming Live Session Reminders
+# -------------------------------
 def send_upcoming_live_session_reminders():
     """
     Sends 24-hour, 3-hour, and 1-hour reminders for upcoming live sessions.
-    Also creates in-app dashboard notifications for students.
+    Also creates dashboard notifications for students.
     """
     now = timezone.now()
 
-    # Helper function to send both email + dashboard notification
     def send_reminder(session, student, hours_left):
         context = {
             'name': student.get_full_name() or student.username,
@@ -228,7 +210,6 @@ def send_upcoming_live_session_reminders():
             'link': session.link,
         }
 
-        # Subject varies by time
         if hours_left == 24:
             subject = f"⏰ Reminder: Your Live Session in 24 Hours – {session.course.title}"
             msg = f"Your live session '{session.title}' for {session.course.title} starts in 24 hours."
@@ -242,7 +223,7 @@ def send_upcoming_live_session_reminders():
         # Send email
         send_html_email(subject, student.email, context, 'email/live_session_reminder.html')
 
-        # Create dashboard notification
+        # Dashboard notification
         Notification.objects.create(
             student=student,
             notif_type='live',
@@ -252,7 +233,7 @@ def send_upcoming_live_session_reminders():
             obj_id=session.id
         )
 
-    # --- 24-HOUR REMINDERS ---
+    # 24-hour
     sessions_24hr = LiveSession.objects.filter(
         reminder_24hr_sent=False,
         start_time__gt=now,
@@ -265,7 +246,7 @@ def send_upcoming_live_session_reminders():
         session.reminder_24hr_sent = True
         session.save()
 
-    # --- 3-HOUR REMINDERS ---
+    # 3-hour
     sessions_3hr = LiveSession.objects.filter(
         reminder_sent=False,
         start_time__gt=now,
@@ -278,7 +259,7 @@ def send_upcoming_live_session_reminders():
         session.reminder_sent = True
         session.save()
 
-    # --- 1-HOUR REMINDERS ---
+    # 1-hour
     sessions_1hr = LiveSession.objects.filter(
         reminder_1hr_sent=False,
         start_time__gt=now,
@@ -290,3 +271,25 @@ def send_upcoming_live_session_reminders():
             send_reminder(session, sc.student, 1)
         session.reminder_1hr_sent = True
         session.save()
+
+# main/utils/email_utils.py
+def send_payment_receipt(enrollment):
+    """
+    Send a payment receipt email to the student.
+    """
+    subject = f"Payment Receipt - {enrollment.course.title}"
+    message = f"""
+Hello {enrollment.full_name},
+
+We have received your payment of ₦{enrollment.amount_paid} for the course '{enrollment.course.title}'.
+Thank you for enrolling in STEM CodeMaster!
+
+Best regards,
+STEM CodeMaster Team
+"""
+    # Send asynchronously via Celery
+    send_email_task.delay(
+        to_email=enrollment.email,
+        subject=subject,
+        message=message
+    )

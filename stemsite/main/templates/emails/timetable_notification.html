@@ -5,20 +5,32 @@
     <title>New Class Scheduled</title>
 </head>
 <body>
-    <p>Hi {{ student.username }},</p>
 
-    <p>A new class has been scheduled for you:</p>
+    <p>Hello {{ student_name }},</p>
 
-    <ul>
-        <li><strong>Course:</strong> {{ timetable.course }}</li>
-        <li><strong>Date:</strong> {{ timetable.date|date:"D, M d, Y" }}</li>
-        <li><strong>Time:</strong> {{ timetable.start_time|time:"H:i" }} - {{ timetable.end_time|time:"H:i" }}</li>
-        <li><strong>Instructor:</strong> {{ timetable.instructor }}</li>
-        {% if timetable.join_link %}
-        <li><strong>Join Link:</strong> <a href="{{ timetable.join_link }}">{{ timetable.join_link }}</a></li>
-        {% endif %}
-    </ul>
+    <p>
+        A new class schedule has been added for
+        <strong>{{ course_title }}</strong>.
+    </p>
+
+    <p>
+        🗓 <strong>Date:</strong> {{ class_date }} <br>
+        ⏰ <strong>Time:</strong> {{ start_time }} – {{ end_time }}
+    </p>
+
+    {% if instructor_name %}
+        <p><strong>Instructor:</strong> {{ instructor_name }}</p>
+    {% endif %}
+
+    {% if join_link %}
+        <p>
+            <strong>Join Link:</strong>
+            <a href="{{ join_link }}">{{ join_link }}</a>
+        </p>
+    {% endif %}
 
     <p>Thank you!</p>
+
 </body>
 </html>
+

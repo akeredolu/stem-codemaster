@@ -1,5 +1,4 @@
-#from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async, send_plain_email_async
 from django.conf import settings
 from django.utils.html import strip_tags
 
@@ -19,11 +18,13 @@ def send_broadcast_email(recipient_email, subject, context):
     plain_message = strip_tags(html_message)
 
     send_email_async(
+        to_email=recipient_email,
         subject=subject,
-        message=plain_message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[recipient_email],
-        html_message=html_message,
+        template_name=None,  # No template, using raw HTML
+        context=None,
+        fallback_subject=subject,
+        fallback_message=plain_message,
         fail_silently=True,
+        html_message=html_message,
     )
 

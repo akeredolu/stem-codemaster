@@ -3,9 +3,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-#from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
-
 
 from django.urls import reverse
 
@@ -189,10 +186,8 @@ class Material(models.Model):
         else:
             return 'other'
 
-    # ✅ Remove the send_material_notification method entirely
-
-
-#-----------Newly Adfded to Material Model----------------
+   
+#-----------Newly Adfded to Model----------------
     
 class CoursePlan(models.Model):
     CLASS_TYPE_CHOICES = [

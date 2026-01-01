@@ -1,8 +1,8 @@
 # services/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-#from django.core.mail import send_mail
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async, send_plain_email_async
+
 import requests
 
 from .models import Service, Testimonial, ServiceRequest, BankDetail, Payment
@@ -23,7 +23,7 @@ def our_services(request):
             service_request.save()
 
             # Notify admin about the new request
-            send_email_async(
+            send_plain_email_async(
                 subject=f"New Service Request: {service_request.service.name}",
                 message=(
                     f"Name: {service_request.name}\n"
@@ -31,8 +31,7 @@ def our_services(request):
                     f"Phone: {service_request.phone}\n"
                     f"Details: {service_request.details}"
                 ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient=[settings.ADMIN_EMAIL],
+                recipients=[settings.ADMIN_EMAIL],
                 fail_silently=True,
             )
 

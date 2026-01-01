@@ -6,35 +6,42 @@
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 20px;">
   <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
+    
     <h2 style="color: #007bff; margin-bottom: 10px;">🎓 New Live Session Scheduled</h2>
     
     <p>Hello <strong>{{ student_name }}</strong>,</p>
+    
     <p>
       A new live session has been scheduled for your course:
-      <strong>{{ live_session.course }}</strong>.
+      <strong>{{ course_name }}</strong>.
     </p>
 
     <table style="width:100%; border-collapse: collapse; margin: 15px 0;">
       <tr>
         <td style="padding: 6px 0;"><strong>Session Title:</strong></td>
-        <td>{{ live_session.title }}</td>
+        <td>{{ session_title }}</td>
       </tr>
       <tr>
         <td style="padding: 6px 0;"><strong>Description:</strong></td>
-        <td>{{ live_session.description|default:"No description provided." }}</td>
+        <td>{{ session_description }}</td>
       </tr>
       <tr>
         <td style="padding: 6px 0;"><strong>Start Time:</strong></td>
-        <td>{{ live_session.start_time|date:"l, M d, Y H:i" }}</td>
+        <td>{{ start_time|default:"Not specified" }}</td>
       </tr>
       <tr>
         <td style="padding: 6px 0;"><strong>End Time:</strong></td>
-        <td>{{ live_session.end_time|default:"Not specified" }}</td>
+        <td>{{ end_time|default:"Not specified" }}</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0;"><strong>Instructor:</strong></td>
+        <td>{{ instructor_name|default:"TBA" }}</td>
       </tr>
     </table>
 
+    {% if join_link %}
     <p style="margin: 20px 0;">
-      <a href="{{ live_session.link }}" target="_blank" style="
+      <a href="{{ join_link }}" target="_blank" style="
         background-color: #007bff;
         color: #fff;
         text-decoration: none;
@@ -43,9 +50,10 @@
         display: inline-block;
       ">Join Live Session</a>
     </p>
+    {% endif %}
 
     <p style="margin-top: 10px;">
-      You can also view this live session from your student dashboard.
+      You can view this live session from your student dashboard.
     </p>
 
     <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
@@ -53,6 +61,7 @@
       — STEM CodeMaster Team<br>
       <em>Empowering Students Through Technology</em>
     </p>
+
   </div>
 </body>
 </html>

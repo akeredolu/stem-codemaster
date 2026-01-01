@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import strip_tags
 
-from main.utils.email_service import send_email_async
+from main.email_utils import send_email_async, send_plain_email_async
 
 from .forms import AdminBroadcastForm
 from .models import Notification, StudentCourse, Material, Assignment, LiveSession, Course
