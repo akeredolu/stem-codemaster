@@ -120,12 +120,15 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-TIME_ZONE = 'Africa/Lagos'      # Django default timezone
-USE_TZ = True  
-# IMPORTANT
-CELERY_TASK_ALWAYS_EAGER = False
+TIME_ZONE = 'Africa/Lagos'
+USE_TZ = True
 CELERY_ENABLE_UTC = True
 CELERY_TIMEZONE = TIME_ZONE
+
+# For testing on free tier: run tasks synchronously inside web request
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True  # Raise exceptions immediately if a task fails
+
 
 
 ROOT_URLCONF = 'stemsite.urls'
