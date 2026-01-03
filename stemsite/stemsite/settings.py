@@ -1,7 +1,7 @@
 import environ
 import os
-from pathlib import Path
 import dj_database_url
+from pathlib import Path
 
 import cloudinary
 import cloudinary.uploader
@@ -158,22 +158,12 @@ CHANNEL_LAYERS = {
 # Database - PostgreSQL only
 # -----------------------------
 # -----------------------------
-# Database (Render PostgreSQL)
-# -----------------------------
-
-DATABASE_URL = env("DATABASE_URL", default=None)
-
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is not set. "
-        "Set it in Render Dashboard → Environment Variables."
-    )
-
 DATABASES = {
-    "default": dj_database_url.parse(
-        DATABASE_URL,
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL") or
+                "postgresql://stem_codemaster_db_user:hWaRacuSALjBIchq6W11vi9dTTuNU5pn@dpg-d4tdrj4hg0os73cs966g-a/stem_codemaster_db",
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=True
     )
 }
 
