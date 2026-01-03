@@ -159,11 +159,12 @@ CHANNEL_LAYERS = {
 # -----------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        default=env('DATABASE_URL'),
+        default=os.environ.get('DATABASE_URL'),  # read Render env var
         conn_max_age=600,
-        ssl_require=not DEBUG  # SSL in production
+        ssl_require=not DEBUG
     )
 }
+
 
 # Authentication
 LOGIN_URL = 'login'
