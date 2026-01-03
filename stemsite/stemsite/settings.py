@@ -53,26 +53,18 @@ PAYSTACK_VERIFY_URL = env('PAYSTACK_VERIFY_URL')
 # =========================
 # EMAIL CONFIGURATION (Brevo SMTP + Verified Gmail sender)
 # =========================
+# Brevo HTTP API settings
+BREVO_API_KEY = env("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL")
+BREVO_SENDER_NAME = env("BREVO_SENDER_NAME")
 
-# Use env vars for all sensitive info
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST', default='smtp-relay.brevo.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+# Admin / Contact notification emails (Brevo HTTP API)
+ADMIN_EMAIL = env("ADMIN_EMAIL")
+CONTACT_NOTIFICATION_EMAIL = env("CONTACT_NOTIFICATION_EMAIL")
 
-# Brevo SMTP credentials (must always be Brevo login)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='9e5404001@smtp-brevo.com')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='441cae9f7db479307d9459745fc5d72bdf50de58db927cfd4a90074dceece5ff-cG1cLMEwzCzX7V3r')
-
-# Verified sender email (can be Gmail for now)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='code247.me@gmail.com')
-SERVER_EMAIL = env('SERVER_EMAIL', default='code247.me@gmail.com')
-
-# Optional: email for contact form notifications
-CONTACT_NOTIFICATION_EMAIL = env('CONTACT_NOTIFICATION_EMAIL', default=EMAIL_HOST_USER)
-
-ADMIN_EMAIL = env('CONTACT_NOTIFICATION_EMAIL', default=EMAIL_HOST_USER)
+ADMINS = [
+    ("Admin", ADMIN_EMAIL),
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -112,24 +104,6 @@ MIDDLEWARE = [
     'main.middleware.ForcePasswordChangeMiddleware',
 
 ]
-
-
-# Celery settings
-CELERY_BROKER_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/0")
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-TIME_ZONE = 'Africa/Lagos'
-USE_TZ = True
-CELERY_ENABLE_UTC = True
-CELERY_TIMEZONE = TIME_ZONE
-
-# For testing on free tier: run tasks synchronously inside web request
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True  # Raise exceptions immediately if a task fails
-
-
 
 ROOT_URLCONF = 'stemsite.urls'
 
@@ -261,7 +235,3 @@ else:      # Production
 #----------Change to your real URL in Production ------------
 SITE_URL = "http://127.0.0.1:8000"
 
-# Admins who will receive system notifications
-ADMINS = [
-    ("Admin", EMAIL_HOST_USER),  # You can add more tuples: ("Name", "email")
-]

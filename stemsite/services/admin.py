@@ -1,7 +1,5 @@
 # services/admin.py
 from django.conf import settings
-#from django.core.mail import send_mail
-from main.email_utils import send_email_async, send_plain_email_async
 from django.urls import path, reverse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
@@ -14,7 +12,7 @@ from .models import (
     Payment,
     BankDetail,
 )
-from .utils import send_invoice_email
+from main.brevo_email import send_brevo_email  # ✅ Correct Brevo import
 
 
 @admin.register(Service)
@@ -75,7 +73,20 @@ class ServiceRequestAdmin(admin.ModelAdmin):
             service_request.status = "paid"
             service_request.save()
 
-            send_invoice_email(service_request)
+            # ✅ Send invoice via Brevo
+            subject = f"Invoice for Service: {service_request.service.name}"
+            plain_text = (
+                f"Hello {service_request.name},\n\n"
+                f"Your bank payment for '{service_request.service.name}' has been confirmed.\n"
+                f"Amount Paid: ₦{service_request.amount_due}\n\n"
+                "Thank you for using STEM CodeMaster!"
+            )
+            send_brevo_email(
+                to_email=service_request.email,
+                subject=subject,
+                plain_text=plain_text
+            )
+
             self.message_user(
                 request,
                 "Bank payment confirmed and invoice sent.",
@@ -138,20 +149,21 @@ class ServiceRequestAdmin(admin.ModelAdmin):
                 reverse("payment_page", args=[obj.id])
             )
 
-            send_plain_email_async(
-                subject="Payment Link – STEM CodeMaster",
-                message=(
-                    f"Hello {obj.name},\n\n"
-                    f"Your request for {obj.service.name} has been approved.\n"
-                    f"Amount Due: ₦{obj.amount_due}\n\n"
-                    f"Please make payment using the link below:\n"
-                    f"{payment_url}\n\n"
-                    "Thank you."
-                ),
-                recipients=[obj.email],
-                fail_silently=True,
+            # ✅ Send payment link via Brevo
+            subject = "Payment Link – STEM CodeMaster"
+            plain_text = (
+                f"Hello {obj.name},\n\n"
+                f"Your request for '{obj.service.name}' has been approved.\n"
+                f"Amount Due: ₦{obj.amount_due}\n\n"
+                f"Please make payment using the link below:\n"
+                f"{payment_url}\n\n"
+                "Thank you."
             )
-
+            send_brevo_email(
+                to_email=obj.email,
+                subject=subject,
+                plain_text=plain_text
+            )
 
 
 @admin.register(Payment)

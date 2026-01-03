@@ -1,7 +1,6 @@
 from django.template.loader import render_to_string
 from django.utils import timezone
 from main.models import LiveSession, StudentCourse
-from main.email_utils import send_email_async
 
 def send_upcoming_live_session_reminders():
     now = timezone.now()

@@ -1,13 +1,11 @@
 # services/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from main.email_utils import send_email_async, send_plain_email_async
-
 import requests
 
 from .models import Service, Testimonial, ServiceRequest, BankDetail, Payment
 from .forms import ServiceRequestForm, PaymentForm
-from .utils import send_invoice_email
+from main.brevo_email import send_brevo_email  # ✅ Correct import from main app
 
 
 def our_services(request):
@@ -22,17 +20,19 @@ def our_services(request):
             service_request.status = "new"  # New request
             service_request.save()
 
-            # Notify admin about the new request
-            send_plain_email_async(
-                subject=f"New Service Request: {service_request.service.name}",
-                message=(
-                    f"Name: {service_request.name}\n"
-                    f"Email: {service_request.email}\n"
-                    f"Phone: {service_request.phone}\n"
-                    f"Details: {service_request.details}"
-                ),
-                recipients=[settings.ADMIN_EMAIL],
-                fail_silently=True,
+            # Notify admin about the new request via Brevo
+            subject = f"New Service Request: {service_request.service.name}"
+            plain_text = (
+                f"Name: {service_request.name}\n"
+                f"Email: {service_request.email}\n"
+                f"Phone: {service_request.phone}\n"
+                f"Details: {service_request.details}"
+            )
+
+            send_brevo_email(
+                to_email=settings.ADMIN_EMAIL,
+                subject=subject,
+                plain_text=plain_text
             )
 
             # Redirect to a simple thank-you page
@@ -52,7 +52,6 @@ def our_services(request):
     )
 
 
-
 def pay_service(request, service_request_id):
     """Redirect user to Paystack payment page."""
     service_request = get_object_or_404(ServiceRequest, id=service_request_id)
@@ -64,7 +63,7 @@ def pay_service(request, service_request_id):
 
     data = {
         "email": service_request.email,
-        "amount": int(service_request.amount_due * 100),  # Use amount_due
+        "amount": int(service_request.amount_due * 100),
         "callback_url": request.build_absolute_uri(
             f"/services/paystack/callback/{service_request.id}/"
         ),
@@ -81,7 +80,6 @@ def pay_service(request, service_request_id):
     if res.get("status"):
         return redirect(res["data"]["authorization_url"])
 
-    # If Paystack fails, redirect back to services
     return redirect("our_services")
 
 
@@ -108,12 +106,23 @@ def paystack_callback(request, service_request_id):
         service_request.status = "paid"
         service_request.save()
 
-        # Send invoice after payment
-        send_invoice_email(service_request)
+        # Send invoice after payment via Brevo
+        subject = f"Invoice for Service: {service_request.service.name}"
+        plain_text = (
+            f"Hello {service_request.name},\n\n"
+            f"Your payment of ₦{service_request.amount_due} for the service "
+            f"'{service_request.service.name}' has been confirmed.\n\n"
+            "Thank you for choosing our services!"
+        )
+
+        send_brevo_email(
+            to_email=service_request.email,
+            subject=subject,
+            plain_text=plain_text
+        )
 
         return redirect("services_thank_you")
 
-    # Payment failed → keep status unchanged
     return redirect("our_services")
 
 
@@ -124,7 +133,7 @@ def payment_page(request, service_request_id):
 
     if request.method == "POST":
         form = PaymentForm(request.POST, request.FILES)
-        method = request.POST.get("method")  # Determine which payment method was submitted
+        method = request.POST.get("method")
 
         if method == "bank":
             if form.is_valid():
@@ -133,8 +142,21 @@ def payment_page(request, service_request_id):
                 payment.method = "bank"
                 payment.save()
 
-                # Optionally, send invoice or pending confirmation email
-                send_invoice_email(service_request)
+                # Send invoice / pending confirmation email via Brevo
+                subject = f"Invoice Pending for Service: {service_request.service.name}"
+                plain_text = (
+                    f"Hello {service_request.name},\n\n"
+                    f"We have received your bank payment submission for '{service_request.service.name}'. "
+                    "It is pending verification. We will notify you once confirmed.\n\n"
+                    "Thank you!"
+                )
+
+                send_brevo_email(
+                    to_email=service_request.email,
+                    subject=subject,
+                    plain_text=plain_text
+                )
+
                 return render(
                     request,
                     "services/payment_pending.html",
@@ -142,7 +164,6 @@ def payment_page(request, service_request_id):
                 )
 
         elif method == "paystack":
-            # Redirect to Paystack payment
             return redirect("pay_service", service_request_id=service_request.id)
 
     else:
@@ -154,6 +175,7 @@ def payment_page(request, service_request_id):
         {
             "service_request": service_request,
             "bank_details": bank_details,
-            "payment_form": form,  # pass as payment_form to match template
+            "payment_form": form,
         },
     )
+

@@ -117,8 +117,6 @@ class Course(models.Model):
         ordering = ['order']  # Courses will appear in the order you set
 
 
-
-
 class StudentCourse(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)

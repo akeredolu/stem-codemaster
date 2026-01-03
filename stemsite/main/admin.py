@@ -7,15 +7,17 @@ from django.contrib.auth import get_user_model
 from .models import AdminMessage
 from chat.models import ChatMessage
 from django.conf import settings
-from django.contrib import admin
 from .models import SiteSetting
 from .models import Enrollment
 from django.utils import timezone
 from django.utils.timezone import localtime
+from django.utils.html import format_html
+from main.brevo_email import send_brevo_email
 
-from main.email_utils import send_email_async, send_plain_email_async
 from .models import *
+import logging
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 # =============== FORMS ==================
 
@@ -26,7 +28,6 @@ class ProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__username',)
 
 
-from django.contrib import admin
 from .models import Course, Program, ProgramIntro, AboutSection
 
 @admin.register(Course)
@@ -41,106 +42,129 @@ class CourseAdmin(admin.ModelAdmin):
 @admin.action(description="Mark selected enrollments as Paid & Send Secret Code")
 def mark_enrollment_paid(self, request, queryset):
     updated = 0
+
     for enrollment in queryset:
         if not enrollment.is_enrollment_paid:
-            # 1️⃣ Mark paid first
+            # 1️⃣ Mark as paid
             enrollment.is_enrollment_paid = True
             enrollment.paid_at = timezone.now()
-            enrollment.save()  # Save before generating secret code
+            enrollment.save(update_fields=["is_enrollment_paid", "paid_at"])
 
             # 2️⃣ Generate secret code if missing
             if not enrollment.secret_code:
                 code = enrollment.generate_and_set_secret_code()
+            else:
+                code = enrollment.secret_code
 
-                # 3️⃣ Send secret code email
-                self.send_secret_code_email(enrollment, code)
-            
+            # 3️⃣ Send secret code email
+            self.send_secret_code_email(enrollment, code)
+
             updated += 1
 
     self.message_user(
         request,
         f"{updated} enrollment(s) marked as paid and secret codes sent.",
-        messages.SUCCESS
+        messages.SUCCESS,
     )
 
- 
-    # -------------------------------
-    #  ACTION: Activate Course
-    # -------------------------------
-    @admin.action(description="Activate course for selected enrollments")
-    def activate_course(self, request, queryset):
-        updated = 0
-        for enrollment in queryset:
-            if not enrollment.is_course_activated:
-                enrollment.is_course_activated = True
-                enrollment.is_active = True  # ensure student can log in
-                enrollment.save(update_fields=["is_course_activated", "is_active"])
 
-                # ✅ Send activation email if not already sent
-                if not enrollment.is_activation_email_sent:
-                    subject = "Your Course Has Been Activated!"
-                    message = (
-                        f"Hello {enrollment.full_name},\n\n"
-                        f"Your course '{enrollment.course}' under the '{enrollment.program}' "
-                        f"has been activated successfully. 🎉\n\n"
-                        "You can now log in to your student portal and start learning.\n\n"
-                        "Best regards,\n"
-                        "STEM CodeMaster Team"
-                    )
-                    send_plain_email_async(
-                        subject,
-                        message,
-                        recipients=[enrollment.email],
-                        fail_silently=False,
-                    )
+# =========================================================
+# ACTION: Activate Course
+# =========================================================
+@admin.action(description="Activate course for selected enrollments")
+def activate_course(self, request, queryset):
+    updated = 0
 
+    for enrollment in queryset:
+        if not enrollment.is_course_activated:
+            enrollment.is_course_activated = True
+            enrollment.is_active = True
+            enrollment.save(update_fields=["is_course_activated", "is_active"])
+
+            # ✅ Send activation email only once
+            if not enrollment.is_activation_email_sent:
+                subject = "Your Course Has Been Activated!"
+                message = (
+                    f"Hello {enrollment.full_name},\n\n"
+                    f"Your course '{enrollment.course}' under the '{enrollment.program}' "
+                    "has been activated successfully. 🎉\n\n"
+                    "You can now log in to your student portal and start learning.\n\n"
+                    "Best regards,\n"
+                    "STEM CodeMaster Team"
+                )
+
+                try:
+                    send_brevo_email(
+                        to_email=enrollment.email,
+                        subject=subject,
+                        html_content=f"<pre>{message}</pre>",
+                    )
                     enrollment.is_activation_email_sent = True
                     enrollment.save(update_fields=["is_activation_email_sent"])
+                except Exception as e:
+                    logger.error(
+                        f"Activation email failed for {enrollment.email}: {e}"
+                    )
 
-                updated += 1
+            updated += 1
 
-        self.message_user(request, f"{updated} enrollment(s) activated successfully.", messages.SUCCESS)
-
-    # -------------------------------
-    #  ACTION: Resend Secret Code
-    # -------------------------------
-    @admin.action(description="Resend secret code email")
-    def resend_secret_code(self, request, queryset):
-        sent_count = 0
-        for enrollment in queryset:
-            if enrollment.secret_code:
-                self.send_secret_code_email(enrollment, enrollment.secret_code)
-                sent_count += 1
-        if sent_count:
-            self.message_user(request, f"Secret code resent to {sent_count} student(s).", messages.SUCCESS)
-        else:
-            self.message_user(request, "No secret codes found to resend.", messages.WARNING)
-
-    # -------------------------------
-    #  HELPER: Send Secret Code Email
-    # -------------------------------
-    def send_secret_code_email(self, enrollment, code):
-        subject = "Your STEM CodeMaster Secret Code"
-        message = f"""
-Hello {enrollment.full_name},
-
-✅ Your enrollment has been confirmed.
-
-Here is your secret login code: {code}
-
-Use this code to log in via the secret login page.
-
-Best regards,  
-STEM CodeMaster Team
-"""
-        
-        send_plain_email_async(
-        subject=subject,
-        message=message,
-        recipients=[enrollment.email],  # ✅ explicit parameter
-        fail_silently=False,
+    self.message_user(
+        request,
+        f"{updated} enrollment(s) activated successfully.",
+        messages.SUCCESS,
     )
 
+
+# =========================================================
+# ACTION: Resend Secret Code
+# =========================================================
+@admin.action(description="Resend secret code email")
+def resend_secret_code(self, request, queryset):
+    sent_count = 0
+
+    for enrollment in queryset:
+        if enrollment.secret_code:
+            self.send_secret_code_email(enrollment, enrollment.secret_code)
+            sent_count += 1
+
+    if sent_count:
+        self.message_user(
+            request,
+            f"Secret code resent to {sent_count} student(s).",
+            messages.SUCCESS,
+        )
+    else:
+        self.message_user(
+            request,
+            "No secret codes found to resend.",
+            messages.WARNING,
+        )
+
+
+# =========================================================
+# HELPER: Send Secret Code Email (Brevo)
+# =========================================================
+def send_secret_code_email(self, enrollment, code):
+    subject = "Your STEM CodeMaster Secret Code"
+    message = (
+        f"Hello {enrollment.full_name},\n\n"
+        "✅ Your enrollment has been confirmed.\n\n"
+        f"Here is your secret login code: {code}\n\n"
+        "Use this code to log in via the secret login page.\n\n"
+        "Best regards,\n"
+        "STEM CodeMaster Team"
+    )
+
+    try:
+        send_brevo_email(
+            to_email=enrollment.email,
+            subject=subject,
+            html_content=f"<pre>{message}</pre>",
+        )
+    except Exception as e:
+        logger.error(
+            f"Secret code email failed for {enrollment.email}: {e}"
+        )
 
 
 @admin.register(ContactMessage)
@@ -161,50 +185,61 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     search_fields = ('name', 'subject')
 
 # main/admin.py
-
-from django.conf import settings
-from .models import CoursePayment
-from main.utils.email_utils import send_templated_email  # if you use it
-
 @admin.register(CoursePayment)
 class CoursePaymentAdmin(admin.ModelAdmin):
     list_display = (
-        'enrollment',
-        'course',
-        'amount_paid',
-        'payment_type',
-        'payment_method',
-        'is_verified',
-        'dashboard_blocked', 
-        'proof_of_payment_link',  # only the clickable link
-        'created_at'
-    )
-    search_fields = ('enrollment__full_name', 'course__title', 'reference')
-    list_editable = ('is_verified',)
-    list_filter = ('payment_type', 'payment_method', 'is_verified', 'course', 'dashboard_blocked')
-    readonly_fields = (
-        'enrollment',
-        'course',
-        'amount_paid',
-        'payment_type',
-        'payment_method',
-        'reference',
-        'proof_of_payment_link',  # only the link
-        'created_at'
+        "enrollment",
+        "course",
+        "amount_paid",
+        "payment_type",
+        "payment_method",
+        "is_verified",
+        "dashboard_blocked",
+        "proof_of_payment_link",
+        "created_at",
     )
 
-    actions = ['verify_payments', 'block_dashboard', 'unblock_dashboard']
-    
+    search_fields = ("enrollment__full_name", "course__title", "reference")
+    list_editable = ("is_verified",)
+    list_filter = (
+        "payment_type",
+        "payment_method",
+        "is_verified",
+        "course",
+        "dashboard_blocked",
+    )
+
+    readonly_fields = (
+        "enrollment",
+        "course",
+        "amount_paid",
+        "payment_type",
+        "payment_method",
+        "reference",
+        "proof_of_payment_link",
+        "created_at",
+    )
+
+    actions = ["verify_payments", "block_dashboard", "unblock_dashboard"]
+
+    # --------------------------------------------------
+    # Proof of payment link
+    # --------------------------------------------------
     def proof_of_payment_link(self, obj):
         if obj.proof_of_payment:
-            # Show filename with clickable link
-            filename = obj.proof_of_payment.name.split('/')[-1]
-            return format_html('<a href="{}" target="_blank">{}</a>', obj.proof_of_payment.url, filename)
+            filename = obj.proof_of_payment.name.split("/")[-1]
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>',
+                obj.proof_of_payment.url,
+                filename,
+            )
         return "-"
+
     proof_of_payment_link.short_description = "Proof of Payment"
 
-
-    # ---------- Existing verify payments ----------
+    # --------------------------------------------------
+    # Email helpers (Brevo)
+    # --------------------------------------------------
     def send_confirmation(self, payment):
         subject = f"Payment Verified - {payment.course.title}"
         message = (
@@ -214,114 +249,114 @@ class CoursePaymentAdmin(admin.ModelAdmin):
             "You now have full access to your learning materials.\n\n"
             "Thank you for choosing STEM CodeMaster!"
         )
-        
-        send_plain_email_async(
-        subject=subject,
-        message=message,
-        recipients=[payment.enrollment.email],  # ✅ explicit
-        fail_silently=True,
-    )
-        
+
+        try:
+            send_brevo_email(
+                to_email=payment.enrollment.email,
+                subject=subject,
+                html_content=f"<pre>{message}</pre>",
+            )
+        except Exception as e:
+            logger.error(
+                f"Payment confirmation email failed for {payment.enrollment.email}: {e}"
+            )
+
+    # --------------------------------------------------
+    # ACTION: Verify payments
+    # --------------------------------------------------
+    @admin.action(description="Verify selected payments")
     def verify_payments(self, request, queryset):
         updated = 0
+
         for payment in queryset:
             if not payment.is_verified:
                 payment.is_verified = True
-                payment.save()
+                payment.save(update_fields=["is_verified"])
+
                 self.send_confirmation(payment)
                 updated += 1
+
         self.message_user(
             request,
-            f"✅ {updated} payment(s) verified successfully and confirmation emails sent.",
-            level=messages.SUCCESS
+            f"✅ {updated} payment(s) verified successfully.",
+            messages.SUCCESS,
         )
-    verify_payments.short_description = "Verify selected payments"
 
-    # ---------- Block dashboard ----------
+    # --------------------------------------------------
+    # ACTION: Block dashboard
+    # --------------------------------------------------
+    @admin.action(description="Block selected student dashboard(s)")
     def block_dashboard(self, request, queryset):
         updated = 0
+
         for payment in queryset:
             if not payment.dashboard_blocked:
                 payment.dashboard_blocked = True
-                payment.save()
+                payment.save(update_fields=["dashboard_blocked"])
                 updated += 1
 
-                # Send notification to student
                 subject = "⚠️ Dashboard Access Restricted"
                 message = (
                     f"Hello {payment.enrollment.full_name},\n\n"
                     f"Your access to the dashboard for '{payment.course.title}' "
-                    "has been temporarily blocked by the admin. "
+                    "has been temporarily blocked by the admin.\n\n"
                     "Please complete your payment to regain access."
                 )
+
                 try:
-                    
-                        # Preferred: send templated email if possible
-                    send_plain_email_async(
-                        to_email=payment.enrollment.user,
-                        template_name="dashboard_block_notification",
-                        context={"payment": payment},
-                        fallback_subject=subject,
-                        fallback_message=message,
-                    )
-                except Exception:
-                    
-                    send_plain_email_async(
+                    send_brevo_email(
+                        to_email=payment.enrollment.email,
                         subject=subject,
-                        message=message,
-                        recipients=[payment.enrollment.email],
-                        fail_silently=True,
+                        html_content=f"<pre>{message}</pre>",
                     )
-                    
+                except Exception as e:
+                    logger.error(
+                        f"Dashboard block email failed for {payment.enrollment.email}: {e}"
+                    )
+
         self.message_user(
             request,
-            f"✅ {updated} student(s) dashboard(s) blocked successfully.",
-            level=messages.SUCCESS
+            f"✅ {updated} student dashboard(s) blocked successfully.",
+            messages.SUCCESS,
         )
-    block_dashboard.short_description = "Block selected student dashboard(s)"
 
-    # ---------- Unblock dashboard ----------
+    # --------------------------------------------------
+    # ACTION: Unblock dashboard
+    # --------------------------------------------------
+    @admin.action(description="Unblock selected student dashboard(s)")
     def unblock_dashboard(self, request, queryset):
         updated = 0
+
         for payment in queryset:
             if payment.dashboard_blocked:
                 payment.dashboard_blocked = False
-                payment.save()
+                payment.save(update_fields=["dashboard_blocked"])
                 updated += 1
 
-                # Send notification to student
                 subject = "✅ Dashboard Access Restored"
                 message = (
                     f"Hello {payment.enrollment.full_name},\n\n"
                     f"Your access to the dashboard for '{payment.course.title}' "
-                    "has been restored by the admin. You can now continue learning."
+                    "has been restored.\n\n"
+                    "You can now continue learning."
                 )
+
                 try:
-                    s
-                    send_plain_email_async(
-                        to_email=payment.enrollment.user,
-                        template_name="dashboard_unblock_notification",
-                        context={"payment": payment},
-                        fallback_subject=subject,
-                        fallback_message=message,
-                    )
-                except Exception:
-                    
-                        # Fallback to plain text email
-                    send_plain_email_async(
+                    send_brevo_email(
+                        to_email=payment.enrollment.email,
                         subject=subject,
-                        message=message,
-                        recipients=[payment.enrollment.email],
-                        fail_silently=True,
-                    
+                        html_content=f"<pre>{message}</pre>",
                     )
+                except Exception as e:
+                    logger.error(
+                        f"Dashboard unblock email failed for {payment.enrollment.email}: {e}"
+                    )
+
         self.message_user(
             request,
-            f"✅ {updated} student(s) dashboard(s) unblocked successfully.",
-            level=messages.SUCCESS
+            f"✅ {updated} student dashboard(s) unblocked successfully.",
+            messages.SUCCESS,
         )
-    unblock_dashboard.short_description = "Unblock selected student dashboard(s)"
-
 
 
 @admin.register(BankDetails)
@@ -354,11 +389,7 @@ class SiteSettingAdmin(admin.ModelAdmin):
     search_fields = ("key",)
 
 
-
-
-#------------------Newly Added-------------------
-
-from django.utils.html import format_html
+#------------------Newly Added------------------
 from django.urls import path
 from django.shortcuts import redirect, render
 from django import forms
@@ -378,111 +409,155 @@ class AdminMessageForm(forms.Form):
 #--------------------Admin Action----------------------
 @admin.register(AdminMessage)
 class AdminMessageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'student', 'created_at', 'is_archived')
-    list_filter = ('is_archived', 'created_at')
-    search_fields = ('title', 'student__username', 'student__email')
+    list_display = ("title", "student", "created_at", "is_archived")
+    list_filter = ("is_archived", "created_at")
+    search_fields = ("title", "student__username", "student__email")
 
     actions = ["send_message_to_selected_students"]
 
+    # --------------------------------------------------
+    # ACTION: Send Admin Message
+    # --------------------------------------------------
+    @admin.action(description="Send Admin Message to selected students")
     def send_message_to_selected_students(self, request, queryset):
         """
-        Admin selects users in User or Enrollment admin, then sends message.
+        Sends a dashboard message + notification + email to selected students.
         """
-        if 'apply' in request.POST:
-            form = AdminMessageForm(request.POST)
-            if form.is_valid():
-                title = form.cleaned_data['title']
-                message_text = form.cleaned_data['message']
-                selected_ids = request.POST.getlist('_selected_action')
 
-                # Get students (User instances) from selected IDs
+        # -------------------------------
+        # Handle form submission
+        # -------------------------------
+        if request.method == "POST" and "apply" in request.POST:
+            form = AdminMessageForm(request.POST)
+
+            if form.is_valid():
+                title = form.cleaned_data["title"]
+                message_text = form.cleaned_data["message"]
+
+                selected_ids = request.POST.getlist("_selected_action")
                 students = User.objects.filter(id__in=selected_ids)
 
+                sent_count = 0
+
                 for student in students:
-                    # 1️⃣ Create AdminMessage record
+                    # 1️⃣ Save AdminMessage
                     AdminMessage.objects.create(
                         student=student,
                         title=title,
-                        message=message_text
+                        message=message_text,
                     )
 
-                    # 2️⃣ Create Dashboard Notification
+                    # 2️⃣ Create dashboard notification
                     Notification.objects.create(
                         student=student,
-                        notif_type='message',
+                        notif_type="message",
                         title=title,
-                        message=message_text
+                        message=message_text,
                     )
 
-                    # 3️⃣ Send Email
-                    send_broadcast_email(
-                        recipients_email=student.email,
-                        subject=f"New Message: {title}",
-                        context={"title": title, "content": message_text}
-                    )
+                    # 3️⃣ Send email via Brevo
+                    try:
+                        send_brevo_email(
+                            to_email=student.email,
+                            subject=f"New Message: {title}",
+                            html_content=f"""
+                                <p>Hello {student.get_full_name() or student.username},</p>
+                                <p>You have received a new message from the admin:</p>
+                                <p><strong>{title}</strong></p>
+                                <p>{message_text}</p>
+                                <br>
+                                <p>— STEM CodeMaster Team</p>
+                            """,
+                        )
+                        sent_count += 1
+                    except Exception:
+                        # Email failure must NOT stop admin action
+                        pass
 
-                self.message_user(request, f"Message sent to {students.count()} student(s) successfully!", level=messages.SUCCESS)
+                self.message_user(
+                    request,
+                    f"✅ Message sent to {sent_count} student(s) successfully.",
+                    messages.SUCCESS,
+                )
+
                 return redirect(request.get_full_path())
-        else:
-            selected = request.POST.getlist('action_checkbox')         
-            form = AdminMessageForm(initial={'_selected_action': selected})
 
-        return render(request, 'admin/send_admin_message.html', {'form': form, 'title': 'Send Admin Message'})
+        # -------------------------------
+        # Initial form display
+        # -------------------------------
+        selected = request.POST.getlist("_selected_action") or [
+            obj.pk for obj in queryset
+        ]
 
-    send_message_to_selected_students.short_description = "Send Admin Message to selected students"
+        form = AdminMessageForm(
+            initial={"_selected_action": selected}
+        )
 
-
-
-from django.shortcuts import render
-from main.models import Enrollment, Notification, Assignment, Material, LiveSession, Course, Timetable
-from main.forms import AdminNotificationForm
-from main.utils.email_helpers import send_broadcast_email
+        return render(
+            request,
+            "admin/send_admin_message.html",
+            {
+                "form": form,
+                "title": "Send Admin Message",
+                "students": queryset,
+            },
+        )
 
 # -------------------------------
 # Admin Action: Send Notification
 # -------------------------------
+from main.models import Notification, Timetable
+from .forms import AdminNotificationForm
+
 @admin.action(description="Send Notification to Selected Students")
 def send_custom_notification(modeladmin, request, queryset):
     """
     Send notifications (dashboard + email) to selected students.
     Supports: assignment, material, live session, admin message, general, timetable
     """
-    if 'apply' in request.POST:
+    if "apply" in request.POST:
         form = AdminNotificationForm(request.POST)
         if form.is_valid():
-            notif_type = form.cleaned_data['notif_type']
-            assignment = form.cleaned_data.get('assignment')
-            material = form.cleaned_data.get('material')
-            live_session = form.cleaned_data.get('live_session')
-            course = form.cleaned_data.get('course')
-            title = form.cleaned_data.get('title')
-            message_text = form.cleaned_data.get('message')
+            notif_type = form.cleaned_data["notif_type"]
+            assignment = form.cleaned_data.get("assignment")
+            material = form.cleaned_data.get("material")
+            live_session = form.cleaned_data.get("live_session")
+            course = form.cleaned_data.get("course")
+            title = form.cleaned_data.get("title")
+            message_text = form.cleaned_data.get("message")
 
             for student in queryset:
-                # Prepare title/message for dashboard/email
-                if notif_type == 'assignment' and assignment:
+                user_obj = getattr(student, "user", student)  # Ensure we have a User object
+
+                # -------------------------------
+                # Prepare title/message
+                # -------------------------------
+                if notif_type == "assignment" and assignment:
                     title_final = title or f"New Assignment: {assignment.title}"
                     message_final = message_text or assignment.instructions
 
-                elif notif_type == 'material' and material:
+                elif notif_type == "material" and material:
                     title_final = title or f"New Material: {material.title}"
                     message_final = message_text or material.description
 
-                elif notif_type == 'live' and live_session:
+                elif notif_type == "live" and live_session:
                     title_final = title or f"Upcoming Live Session: {live_session.title}"
-                    message_final = message_text or f"Join link: {live_session.link}\nStarts at: {live_session.start_time.strftime('%d %b, %Y %I:%M %p')}"
+                    message_final = message_text or (
+                        f"Join link: {live_session.link}\n"
+                        f"Starts at: {live_session.start_time.strftime('%d %b, %Y %I:%M %p')}"
+                    )
 
-                elif notif_type == 'message':
+                elif notif_type == "message":
                     title_final = title or "Message from Admin"
                     message_final = message_text or "You have received a new message from admin."
 
-                elif notif_type == 'general':
+                elif notif_type == "general":
                     title_final = title or "General Notification"
                     message_final = message_text or "Important information for you."
 
-                elif notif_type == 'timetable' and course:
+                elif notif_type == "timetable" and course:
                     title_final = title or f"Schedule / Timetable for {course.title}"
-                    timetable_entries = Timetable.objects.filter(student=student, course=course.title)
+                    timetable_entries = Timetable.objects.filter(student=user_obj, course=course)
                     if timetable_entries.exists():
                         lines = [
                             f"{t.day}: {t.start_time.strftime('%H:%M')} - {t.end_time.strftime('%H:%M')} ({t.instructor})"
@@ -491,26 +566,42 @@ def send_custom_notification(modeladmin, request, queryset):
                         message_final = message_text or "Course Timetable:\n" + "\n".join(lines)
                     else:
                         message_final = message_text or "No timetable set yet for this course."
+
                 else:
                     title_final = title or "Notification"
                     message_final = message_text or "You have a new notification."
 
-                # Save to dashboard notifications
+                # -------------------------------
+                # Save dashboard notification
+                # -------------------------------
                 Notification.objects.create(
-                    student=student.user,
+                    student=user_obj,
                     notif_type=notif_type,
                     title=title_final,
-                    message=message_final
+                    message=message_final,
                 )
 
-                # Send email notification
-                send_broadcast_email(
-                    s_email=student.email,
-                    subject=title_final,
-                    context={"title": title_final, "content": message_final}
-                )
+                # -------------------------------
+                # Send email notification via Brevo HTTP API
+                # -------------------------------
+                try:
+                    send_brevo_email(
+                        to_email=user_obj.email,
+                        subject=title_final,
+                        html_content=f"""
+                            <p>Hello {user_obj.get_full_name() or user_obj.username},</p>
+                            <p>{message_final.replace('\n', '<br>')}</p>
+                            <br>
+                            <p>— STEM CodeMaster Team</p>
+                        """,
+                    )
+                except Exception:
+                    # Do not block action if email fails
+                    continue
 
-            messages.success(request, f"Notifications sent to {queryset.count()} student(s).")
+            messages.success(
+                request, f"✅ Notifications sent to {queryset.count()} student(s)."
+            )
             return None
 
     else:
@@ -519,9 +610,9 @@ def send_custom_notification(modeladmin, request, queryset):
     return render(
         request,
         "admin/send_notification_form.html",
-        {"students": queryset, "form": form, "title": "Send Notification"}
+        {"students": queryset, "form": form, "title": "Send Notification"},
     )
-
+    
 #-------------------testing--------------------
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
@@ -555,7 +646,11 @@ class EnrollmentAdmin(admin.ModelAdmin):
                     self.send_secret_code_email(enrollment, code)
                 enrollment.save()
                 updated += 1
-        self.message_user(request, f"{updated} enrollment(s) marked as paid and secret codes sent.", messages.SUCCESS)
+        self.message_user(
+            request,
+            f"{updated} enrollment(s) marked as paid and secret codes sent.",
+            messages.SUCCESS
+        )
 
     # -------------------------------
     # Admin Action: Resend Secret Code
@@ -568,7 +663,11 @@ class EnrollmentAdmin(admin.ModelAdmin):
                 self.send_secret_code_email(enrollment, enrollment.secret_code)
                 sent_count += 1
         if sent_count:
-            self.message_user(request, f"Secret code resent to {sent_count} student(s).", messages.SUCCESS)
+            self.message_user(
+                request,
+                f"Secret code resent to {sent_count} student(s).",
+                messages.SUCCESS
+            )
         else:
             self.message_user(request, "No secret codes found to resend.", messages.WARNING)
 
@@ -590,42 +689,44 @@ class EnrollmentAdmin(admin.ModelAdmin):
     # -------------------------------
     @admin.action(description="Send custom notification")
     def send_custom_notification(self, request, queryset):
-        # Example placeholder: extend this to send real notification
         for enrollment in queryset:
-            # send your custom notification here
+            # TODO: implement your real notification logic
             pass
-        self.message_user(request, f"Custom notifications sent to {queryset.count()} student(s).", messages.SUCCESS)
+        self.message_user(
+            request,
+            f"Custom notifications sent to {queryset.count()} student(s).",
+            messages.SUCCESS
+        )
 
     # -------------------------------
-    # Helper: Send Secret Code Email
+    # Helper: Send Secret Code Email via Brevo
     # -------------------------------
     def send_secret_code_email(self, enrollment, code):
         subject = "Your STEM CodeMaster Secret Code"
-        message = f"""
-    Hello {enrollment.full_name},
+        html_message = f"""
+<p>Hello {enrollment.full_name},</p>
 
-✅  Your enrollment has been confirmed.
+<p>✅ Your enrollment has been confirmed.</p>
 
-    Here is your secret login code: {code}
+<p>Here is your secret login code: <strong>{code}</strong></p>
 
-    Use this code to log in via the secret login page.
+<p>Use this code to log in via the secret login page.</p>
 
-    Best regards,  
-    STEM CodeMaster Team
-    """
+<br>
+<p>Best regards,<br>STEM CodeMaster Team</p>
+"""
+        # Send asynchronously using Brevo HTTP API
+        try:
+            send_brevo_email(
+                to_email=enrollment.email,
+                subject=subject,
+                html_content=html_message
+            )
+        except Exception:
+            # Fallback: optionally log the error
+            pass
         
-            # Send plain email asynchronously
-        send_plain_email_async(
-            subject=subject,
-            message=message,
-            recipients=[enrollment.email],  # ✅ production-ready parameter
-            fail_silently=False
-        )
-
 #-------------Assignment---------------
-# main/admin.py
-
-
 from django.conf import settings
 from .models import Assignment, Notification
 from .forms import AssignmentAdminForm
@@ -666,10 +767,7 @@ class AssignmentSubmissionAdmin(admin.ModelAdmin):
         }),
     )
 
-
-
 #-----------------Material------------
-from django.contrib import admin
 from django import forms
 from .models import Material
 
@@ -707,7 +805,6 @@ admin.site.register(Material, MaterialAdmin)
 
 #---------Live Session Admin-----------
 from datetime import timedelta
-from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import redirect
 from django.urls import path
@@ -794,11 +891,7 @@ class LiveSessionAdmin(admin.ModelAdmin):
 
 
 #------------------Schedule and Time Table--------------
-from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
-from .models import Timetable, GlobalTimetable
-from main.models import Notification
-
 
 # ---------- Student-specific Timetable ----------
 @admin.register(Timetable)
@@ -831,10 +924,10 @@ class TimetableAdmin(admin.ModelAdmin):
         Notification.objects.create(
             student=student,
             notif_type="timetable",
-            title=f"New Class Scheduled: {obj.course}",
+            title=f"New Class TimeTable: {obj.course}",
             message=(
                 f"Class '{obj.course}' scheduled on {obj.date} "
-                f"from {obj.start_time} to {obj.end_time}. "
+                f"from {obj.start_time.strftime('%H:%M')} to {obj.end_time.strftime('%H:%M')}. "
                 f"Instructor: {obj.instructor}."
             ),
             obj_content_type=ContentType.objects.get_for_model(Timetable),
@@ -849,8 +942,10 @@ class TimetableAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
-
 # ------------------- Global Timetable -------------------
+from django.contrib.contenttypes.models import ContentType
+from .models import GlobalTimetable, Enrollment, Notification
+
 @admin.register(GlobalTimetable)
 class GlobalTimetableAdmin(admin.ModelAdmin):
     list_display = ("course", "date", "start_time", "end_time", "instructor", "join_link")
@@ -869,53 +964,34 @@ class GlobalTimetableAdmin(admin.ModelAdmin):
 
         for enr in enrollments:
             student = getattr(enr, "user", None)
-            if not student or not getattr(student, "email", None):
+            if not student:
                 continue
 
-            # Dashboard notification
+            # Dashboard notification ONLY
             Notification.objects.create(
                 student=student,
                 notif_type="schedule",
                 title=f"New Class Scheduled: {obj.course}",
                 message=(
                     f"Class '{getattr(obj.course, 'title', str(obj.course))}' "
-                    f"scheduled on {obj.date} from {obj.start_time} to {obj.end_time}. "
+                    f"scheduled on {obj.date} from {obj.start_time.strftime('%H:%M')} "
+                    f"to {obj.end_time.strftime('%H:%M')}. "
                     f"Instructor: {obj.instructor}."
                 ),
                 obj_content_type=ContentType.objects.get_for_model(GlobalTimetable),
                 obj_id=obj.id,
             )
 
-            # Safe student name
-            student_name = getattr(student, "get_full_name", lambda: str(student))()
-
-            # Email notification
-            send_email_async(
-                to_email=student.email,
-                subject="New Class Schedule Added",
-                template_name="emails/timetable_notification.html",
-                context={
-                    "student_name": student_name,
-                    "course_title": getattr(obj.course, "title", str(obj.course)),
-                    "class_date": obj.date,
-                    "start_time": obj.start_time,
-                    "end_time": obj.end_time,
-                    "instructor_name": getattr(obj.instructor, "get_full_name", lambda: str(obj.instructor))(),
-                    "join_link": obj.join_link,
-                },
-            )
-
             notifications_sent += 1
 
         self.message_user(
             request,
-            f"Notifications sent to {notifications_sent} student(s) for {obj.course}.",
+            f"Dashboard notifications created for {notifications_sent} student(s) for {obj.course}.",
             messages.SUCCESS,
         )
 
 
 #----------About and Program Sections------------------
-from django.contrib import admin
 from .models import ProgramIntro, Program, AboutSection
 
 # Register AboutSection
@@ -932,5 +1008,4 @@ admin.site.register(ProgramIntro)
 class ProgramAdmin(admin.ModelAdmin):
     list_display = ("title", "order")
     ordering = ("order",)
-
 

@@ -1,4 +1,3 @@
-from main.email_utils import send_email_async, send_plain_email_async
 from django.conf import settings
 from django.utils.html import strip_tags
 

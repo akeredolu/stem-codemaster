@@ -8,14 +8,12 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail import EmailMultiAlternatives
-from main.tasks import send_email_task
 from main.models import (
     EmailTemplate,
     LiveSession,
     StudentCourse,
     Notification
 )
-from main.email_utils import send_email_async, send_plain_email_async
 
 logger = logging.getLogger(__name__)
 

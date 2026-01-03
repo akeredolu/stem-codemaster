@@ -15,11 +15,10 @@ from django.contrib import messages
 from django.conf import settings
 from django.template import Template, Context
 #from django.core.mail import send_mail
-from main.email_utils import send_email_async
+from main.forms import ContactForm
+from main.brevo_email import send_brevo_email
 
 from django.views.decorators.csrf import csrf_exempt
-
-
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -43,15 +42,15 @@ from .forms import (
     ComplaintForm
 )
 
+from django.contrib.auth import get_user_model
+from main.forms import EnrollmentForm
+
 #from .utils import email_notifications
-from main.email_utils import send_email_async, send_plain_email_async
 from main.utils.email_utils import send_payment_receipt
 
 from chat.models import ChatMessage, ChatRoom
 
 from . import utils  
-
-from .utils.email_senders import send_activation_email
 from main.utils import generate_secret_code
 from django.utils import timezone
 from datetime import timedelta
@@ -73,14 +72,15 @@ def home(request):
     about = AboutSection.objects.first()
     program_intro = ProgramIntro.objects.first()
     programs = Program.objects.all().order_by('order')  
-    
 
     if request.method == "POST":
         form = ContactForm(request.POST)
         if form.is_valid():
             contact = form.save()
 
-            # Email context
+            # -----------------------------
+            # 1️⃣ Email context
+            # -----------------------------
             context = {
                 'name': contact.name,
                 'email': contact.email,
@@ -88,7 +88,9 @@ def home(request):
                 'message': contact.message,
             }
 
-            # Auto-reply email
+            # -----------------------------
+            # 2️⃣ Auto-reply email to user
+            # -----------------------------
             try:
                 template = EmailTemplate.objects.get(name="contact_auto_reply")
                 subject = Template(template.subject).render(Context(context))
@@ -101,36 +103,47 @@ def home(request):
                     "Your message:\n"
                     f"{contact.message}\n\n"
                     "-STEM Codemaster Team."
-                )         
-                         
-             # Send auto-reply to user
-            send_plain_email_async(
-                subject=subject,
-                message=message,
-                recipients=[contact.email],
-                fail_silently=True,
+                )
+
+            # Send auto-reply via Brevo HTTP API
+            try:
+                send_brevo_email(
+                    to_email=contact.email,
+                    subject=subject,
+                    html_content=f"<pre>{message}</pre>"
+                )
+            except Exception as e:
+                print(f"Failed to send auto-reply: {e}")
+
+            # -----------------------------
+            # 3️⃣ Notify admin
+            # -----------------------------
+            admin_subject = f"New Contact Message from {contact.name}"
+            admin_message = (
+                f"You received a new contact message:\n\n"
+                f"Name: {contact.name}\n"
+                f"Email: {contact.email}\n"
+                f"Subject: {contact.subject}\n\n"
+                f"Message:\n{contact.message}"
             )
-            
-            # Notify admin
-          
-            send_plain_email_async(
-                subject=f"New Contact Message from {contact.name}",
-                message=(
-                    f"You received a new contact message:\n\n"
-                    f"Name: {contact.name}\n"
-                    f"Email: {contact.email}\n"
-                    f"Subject: {contact.subject}\n\n"
-                    f"Message:\n{contact.message}"
-                ),
-                recipients=[settings.CONTACT_NOTIFICATION_EMAIL],
-                fail_silently=True,
-            )
-            
+
+            try:
+                send_brevo_email(
+                    to_email=settings.CONTACT_NOTIFICATION_EMAIL,
+                    subject=admin_subject,
+                    html_content=f"<pre>{admin_message}</pre>"
+                )
+            except Exception as e:
+                print(f"Failed to notify admin: {e}")
+
+            # -----------------------------
+            # 4️⃣ Success message to user
+            # -----------------------------
             messages.success(
                 request,
                 "Your message has been sent successfully. A confirmation email has been sent."
             )
-           
+
             return redirect('home')
 
     else:
@@ -138,7 +151,6 @@ def home(request):
 
     return render(request, 'base.html', {
         'form': form,
- 
         'courses': courses,
         'testimonials': testimonials,
         'course_plans': course_plans,
@@ -147,9 +159,8 @@ def home(request):
         'about': about,
         'program_intro': program_intro,
         'programs': programs,
-        
     })
-
+    
 # -------------- PORTAL VIEW --------------
 @login_required
 def portal(request):
@@ -202,7 +213,7 @@ def register(request):
 def enroll_now(request):
     """
     Display and handle free enrollment form.
-    On successful POST, save Enrollment, send confirmation email asynchronously,
+    On successful POST, save Enrollment, send confirmation email via Brevo HTTP API,
     and redirect to enrolment_success page.
     """
 
@@ -240,7 +251,7 @@ def enroll_now(request):
                 program=enrollment_data.get("program", ""),
                 class_type=enrollment_data.get("class_type", ""),
                 course=enrollment_data.get("course", ""),
-                skill_level=enrollment_data.get("skill_level", ""),  # ensures form value is used
+                skill_level=enrollment_data.get("skill_level", ""),
                 payment_reference=str(uuid.uuid4()),
                 is_enrollment_paid=False,
                 is_course_activated=False,
@@ -248,7 +259,7 @@ def enroll_now(request):
                 payment_method=None,
                 paid_at=None,
             )
-          
+
             # Store enrollment ID & email in session for success page / proof upload fallback
             request.session['enrollment_id'] = enrollment.id
             request.session['enrollment_email'] = enrollment.email
@@ -257,7 +268,9 @@ def enroll_now(request):
             if 'has_registered' in request.session:
                 del request.session['has_registered']
 
-            # Prepare email content
+            # -----------------------------
+            # 1️⃣ Prepare email content
+            # -----------------------------
             subject = "Enrollment Received"
             message = (
                 f"Dear {enrollment.full_name},\n\n"
@@ -267,14 +280,21 @@ def enroll_now(request):
                 f"Once payment is verified, your secret login code will be sent to you."
             )
 
-            # Send email asynchronously
-            send_plain_email_async(
-                subject=subject,
-                message=message,
-                recipients=[enrollment.email]
-            )
+            # -----------------------------
+            # 2️⃣ Send confirmation email via Brevo HTTP API
+            # -----------------------------
+            try:
+                send_brevo_email(
+                    to_email=enrollment.email,
+                    subject=subject,
+                    html_content=f"<pre>{message}</pre>"  # preserve plain text formatting
+                )
+            except Exception as e:
+                print(f"Failed to send enrollment confirmation email: {e}")
 
-                # Show success message
+            # -----------------------------
+            # 3️⃣ Show success message
+            # -----------------------------
             messages.success(
                 request,
                 "Your enrollment has been submitted. A confirmation email has been sent."
@@ -417,7 +437,7 @@ def enrolment_payment_verify(request, enrollment_id):
         enrollment.payment_method = "Paystack"
         enrollment.paid_at = timezone.now()
 
-        # Generate and save secret code (utils only, no email here)
+        # Generate and save secret code
         secret_code = generate_secret_code().strip().upper()
         enrollment.secret_code = secret_code
         enrollment.save()
@@ -429,7 +449,7 @@ def enrolment_payment_verify(request, enrollment_id):
                 username=username,
                 email=enrollment.email,
                 first_name=enrollment.full_name.split()[0],
-                last_name=" ".join(enrollment.full_name.split()[1:]),
+                last_name=" ".join(enrollment.full_name.split()[1:]) or "",
             )
             user.set_unusable_password()
             user.save()
@@ -437,26 +457,37 @@ def enrolment_payment_verify(request, enrollment_id):
             enrollment.user = user
             enrollment.save()
 
-        # SAFE EMAIL SENDING (does not block payment flow)
-        logger.info(
-            f"Sending enrollment secret code email to {enrollment.email}"
+        # -----------------------------
+        # 1️⃣ Send enrollment secret code email via Brevo HTTP API
+        # -----------------------------
+        secret_email_subject = "Enrollment Payment Successful"
+        secret_email_message = (
+            f"Dear {enrollment.full_name},\n\n"
+            f"Your enrollment payment for {enrollment.course} "
+            f"({enrollment.program}) has been successfully received.\n\n"
+            f"Here is your secret login code: {secret_code}\n\n"
+            "Keep it safe to log in and access your course.\n\n"
+            "- STEM CodeMaster Team"
         )
 
-        send_email_async(
-            to_email=enrollment.email,
-            subject="Enrollment Payment Successful",
-            template_name="emails/enrollment_payment_success.html",
-            context={
-                    "name": enrollment.full_name,
-                    "program": enrollment.program,
-                    "course": enrollment.course,
-                    "secret_code": secret_code,
-                },
+        try:
+            send_brevo_email(
+                to_email=enrollment.email,
+                subject=secret_email_subject,
+                html_content=f"<pre>{secret_email_message}</pre>"
             )
-        
-        # ✅ Send payment receipt
-        send_payment_receipt(enrollment)
+        except Exception as e:
+            logger.error(f"Failed to send secret code email: {e}")
 
+        # -----------------------------
+        # 2️⃣ Send payment receipt (Brevo-safe)
+        # -----------------------------
+        try:
+            send_payment_receipt(enrollment)
+        except Exception as e:
+            logger.error(f"Failed to send payment receipt: {e}")
+
+        # Success message
         messages.success(
             request,
             "Enrollment fee payment successful! A secret login code has been sent to your email.",
@@ -468,11 +499,9 @@ def enrolment_payment_verify(request, enrollment_id):
         messages.error(request, "Payment verification failed or was not successful.")
         return redirect("enrolment_success", enrollment_id=enrollment.id)
 
-
 # --------------------------- BREAK ------------------------------------
 
 # -------------- BANK TRANSFER PROOF FOR ENROLMENT UPLOAD --------------
-#@login_required
 def upload_bank_payment_proof(request, enrollment_id):
     enrollment = get_object_or_404(Enrollment, id=enrollment_id)
 
@@ -493,22 +522,34 @@ def upload_bank_payment_proof(request, enrollment_id):
         if form.is_valid():
             enrollment = form.save(commit=False)
             enrollment.payment_method = 'Bank Transfer'
-            # Keep is_enrollment_paid=False; admin must verify
+            # Keep is_enrollment_paid = False; admin must verify
             enrollment.save()
 
-            # Send acknowledgement email
-            send_plain_email_async(
-                subject='Payment Proof Received',
-                message=(
-                    f"Dear {enrollment.full_name},\n\n"
-                    "We have received your bank transfer proof for the ₦2,500 enrollment fee. "
-                    "We will verify the payment and send you your secret code shortly."
-                ),
-                recipients=[enrollment.email],       # ✅ corrected parameter name
-                fail_silently=True,
-            )
+            # ✅ Send acknowledgement email via Brevo HTTP API (plain text preserved)
+            try:
+                send_brevo_email(
+                    to_email=enrollment.email,
+                    subject="Payment Proof Received",
+                    html_content=f"""
+                    <pre>
+Dear {enrollment.full_name},
 
-            messages.success(request, "Proof uploaded. We will verify and send your secret code via email soon.")
+We have received your bank transfer proof for the ₦2,500 enrollment fee.
+We will verify the payment and send you your secret code shortly.
+
+- STEM CodeMaster Team
+                    </pre>
+                    """
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to send payment proof acknowledgement email to {enrollment.email}: {e}"
+                )
+
+            messages.success(
+                request,
+                "Proof uploaded. We will verify and send your secret code via email soon."
+            )
             return redirect('secret_code_login_simple')
         else:
             messages.error(request, "Invalid file. Please upload again.")
@@ -579,7 +620,7 @@ def course_payment_page(request, enrollment_id):
 def send_payment_receipt(payment):
     enrollment = payment.enrollment
 
-    # Ensure enrollment is linked to a real user
+    # ✅ Ensure enrollment is linked to a real user
     if not enrollment.user:
         # Generate a consistent username
         username = generate_unique_username(enrollment.full_name, enrollment.id)
@@ -591,7 +632,7 @@ def send_payment_receipt(payment):
                 username=username,
                 email=enrollment.email,
                 first_name=enrollment.full_name.split()[0],
-                last_name=" ".join(enrollment.full_name.split()[1:]) if len(enrollment.full_name.split())>1 else "",
+                last_name=" ".join(enrollment.full_name.split()[1:]) if len(enrollment.full_name.split()) > 1 else "",
                 is_active=True
             )
 
@@ -600,13 +641,14 @@ def send_payment_receipt(payment):
     else:
         user = enrollment.user
 
-    # ✅ Generate secret code if missing
+    # ✅ Generate secret code if missing (logic preserved)
     if not enrollment.secret_code:
         code = enrollment.generate_and_set_secret_code()
-        # Send secret code email
         send_secret_code_email(enrollment, code)
 
-    # Send payment receipt email
+    # -----------------------------
+    # ✅ Send payment receipt email (Brevo HTTP API)
+    # -----------------------------
     subject = "STEM CodeMaster - Payment Receipt"
     body = f"""
 Dear {enrollment.full_name},
@@ -622,12 +664,17 @@ Your access has been granted. Use your secret login code to log in.
 Best regards,
 STEM CodeMaster Team
 """
-    send_plain_email_async(
-        subject=subject,
-        message=body,
-        recipients=[enrollment.email],  # ✅ corrected
-        fail_silently=True,  
-    )
+
+    try:
+        send_brevo_email(
+            to_email=enrollment.email,
+            subject=subject,
+            html_content=f"<pre>{body}</pre>"
+        )
+    except Exception as e:
+        logger.error(
+            f"Failed to send payment receipt email to {enrollment.email}: {e}"
+        )
 
 
 #----payment_receipt_confirmation------
@@ -986,19 +1033,29 @@ def send_payment_receipt(enrollment):
     else:
         user = enrollment.user
 
-  
-    # ✅ Send payment receipt email only (no temp password)
-    send_plain_email_async(
-        subject="Course Payment Successful – Receipt",
-        message=(
-            f"Dear {enrollment.full_name},\n\n"
-            f"Your payment for enrollment in {enrollment.course if isinstance(enrollment.course, str) else enrollment.course.title()} has been successfully received.\n\n"
-            f"Thank you for enrolling in the {enrollment.program} program at STEM CodeMaster!\n\n"
-            "-- STEM CodeMaster Team"
-        ),
-        recipients=[enrollment.email],  # ✅ production-ready parameter
-        fail_silently=True,
+    # -----------------------------
+    # ✅ Send payment receipt email (Brevo HTTP API – plain text preserved)
+    # -----------------------------
+    subject = "Course Payment Successful – Receipt"
+    message = (
+        f"Dear {enrollment.full_name},\n\n"
+        f"Your payment for enrollment in "
+        f"{enrollment.course if isinstance(enrollment.course, str) else enrollment.course.title()} "
+        f"has been successfully received.\n\n"
+        f"Thank you for enrolling in the {enrollment.program} program at STEM CodeMaster!\n\n"
+        "-- STEM CodeMaster Team"
     )
+
+    try:
+        send_brevo_email(
+            to_email=enrollment.email,
+            subject=subject,
+            html_content=f"<pre>{message}</pre>"
+        )
+    except Exception as e:
+        logger.error(
+            f"Failed to send course payment receipt email to {enrollment.email}: {e}"
+        )
 
 #---------------------------4RD PART END HERE----------------------------
 
@@ -1150,63 +1207,65 @@ def submit_complaint(request):
             complaint.user = request.user
             complaint.save()
 
+            # =========================
             # --- Notify student ---
-            context_student = {"student": request.user, "complaint": complaint}
+            # =========================
+            context_student = {
+                "student": request.user,
+                "complaint": complaint
+            }
+
+            student_subject = "✅ Complaint Received"
+
             try:
-                send_plain_email_async(
+                student_html = render_to_string(
+                    "emails/complaint_acknowledgment.html",
+                    context_student
+                )
+            except Exception:
+                student_html = f"""
+                <pre>
+Hello {request.user.get_full_name() or request.user.username},
+
+We have received your complaint:
+
+"{complaint.message}"
+
+Our team will review and respond shortly.
+                </pre>
+                """
+
+            try:
+                send_brevo_email(
                     to_email=request.user.email,
-                    template_name="complaint_acknowledgment",
-                    context=context_student,
-                    fallback_subject="✅ Complaint Received",
-                    fallback_message=f"""
-Hello {request.user.get_full_name() or request.user.username},
-
-We have received your complaint:
-
-"{complaint.message}"
-
-Our team will review and respond shortly.
-"""
+                    subject=student_subject,
+                    html_content=student_html
                 )
-            except Exception:
-                send_plain_email_async(
-                    subject="✅ Complaint Received",
-                    message=f"""
-Hello {request.user.get_full_name() or request.user.username},
-
-We have received your complaint:
-
-"{complaint.message}"
-
-Our team will review and respond shortly.
-""",
-                    recipients=[request.user.email],
-                    fail_silently=True,
+            except Exception as e:
+                logger.error(
+                    f"Failed to send complaint acknowledgment to student {request.user.email}: {e}"
                 )
 
+            # =========================
             # --- Notify admin ---
-            admin_email = "code247.me@gmail.com"
-            context_admin = {"student": request.user, "complaint": complaint}
+            # =========================
+            admin_email = settings.ADMIN_EMAIL
+
+            context_admin = {
+                "student": request.user,
+                "complaint": complaint
+            }
+
+            admin_subject = f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}"
+
             try:
-                send_plain_email_async(
-                    to_email=admin_email,
-                    template_name="New_Complaint_Notification",
-                    context=context_admin,
-                    fallback_subject=f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}",
-                    fallback_message=f"""
-A new complaint was submitted.
-
-Student: {request.user.get_full_name()} ({request.user.username})
-Email: {request.user.email}
-
-Complaint:
-"{complaint.message}"
-"""
+                admin_html = render_to_string(
+                    "emails/New_Complaint_Notification.html",
+                    context_admin
                 )
             except Exception:
-                send_plain_email_async(
-                    subject=f"🚨 New Complaint from {request.user.get_full_name() or request.user.username}",
-                    message=f"""
+                admin_html = f"""
+                <pre>
 A new complaint was submitted.
 
 Student: {request.user.get_full_name()} ({request.user.username})
@@ -1214,22 +1273,38 @@ Email: {request.user.email}
 
 Complaint:
 "{complaint.message}"
-""",
-        recipients=[admin_email],
-        fail_silently=True,
-    )
+                </pre>
+                """
 
-            messages.success(request, "✅ Your issue has been submitted. We’ll get back to you soon.")
+            try:
+                send_brevo_email(
+                    to_email=admin_email,
+                    subject=admin_subject,
+                    html_content=admin_html
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to send admin complaint notification: {e}"
+                )
+
+            messages.success(
+                request,
+                "✅ Your issue has been submitted. We’ll get back to you soon."
+            )
             return redirect('portal')
+
         else:
             messages.error(request, "Form submission failed. Please check the fields.")
-            # DEBUG: see why form is invalid
-            print(form.errors)
+            print(form.errors)  # Debug only
+
     else:
         form = ComplaintForm()
 
-    return render(request, 'portal/submit_complaint.html', {'complaint_form': form})
-
+    return render(
+        request,
+        'portal/submit_complaint.html',
+        {'complaint_form': form}
+    )
 
 #-----------------Student Dashboard View-------------------------
 @login_required

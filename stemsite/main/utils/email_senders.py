@@ -1,4 +1,3 @@
-from main.email_utils import send_plain_email_async
 from django.conf import settings
 
 def send_activation_email(enrollment):
