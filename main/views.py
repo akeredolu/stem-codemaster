@@ -1654,15 +1654,16 @@ def download_material(request, material_id):
         return redirect('profile_view')
 
 
- # To keep my Aiven Database Active 24/7
-from django.http import JsonResponse
-from django.contrib.auth.models import User
-
 # To keep my Aiven Database Active 24/7
+from django.http import JsonResponse
+from django.db import connection
+
 def db_health_check(request):
     try:
-        # This forces Django to run a real SQL query against Aiven
-        User.objects.exists() 
+        # Executes an instant, raw SQL ping. Works even if the database is 100% empty!
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+            cursor.fetchone()
         return JsonResponse({"status": "healthy", "database": "connected"}, status=200)
     except Exception as e:
         return JsonResponse({"status": "unhealthy", "error": str(e)}, status=500)

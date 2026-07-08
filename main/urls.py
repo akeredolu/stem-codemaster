@@ -6,7 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import submit_complaint
 
-from main.views import db_ping
+from main.views import db_health_check
 
 from .views import (
     home,
@@ -161,8 +161,8 @@ urlpatterns = [
 # ------- Students Assignment Submission ------
     path('assignments/<int:pk>/submit/', views.submit_assignment, name='submit_assignment'),
 
-     # ... your existing URL patterns ...
-    path('db-ping/', db_ping, name='db_ping'),
+      # To keep my Aiven Database Active 24/7
+    path('api/db-ping/', db_health_check, name='db_ping'),
 ]
 
 #urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
