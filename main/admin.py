@@ -585,12 +585,16 @@ def send_custom_notification(modeladmin, request, queryset):
                 # Send email notification via Brevo HTTP API
                 # -------------------------------
                 try:
+                    # FIX: Compute the string replacement safely outside the f-string curly braces
+                    html_message = message_final.replace('\n', '<br>')
+                    recipient_name = user_obj.get_full_name() or user_obj.username
+
                     send_brevo_email(
                         to_email=user_obj.email,
                         subject=title_final,
                         html_content=f"""
-                            <p>Hello {user_obj.get_full_name() or user_obj.username},</p>
-                            <p>{message_final.replace('\n', '<br>')}</p>
+                            <p>Hello {recipient_name},</p>
+                            <p>{html_message}</p>
                             <br>
                             <p>— STEM CodeMaster Team</p>
                         """,
@@ -612,7 +616,7 @@ def send_custom_notification(modeladmin, request, queryset):
         "admin/send_notification_form.html",
         {"students": queryset, "form": form, "title": "Send Notification"},
     )
-    
+
 #-------------------testing--------------------
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
