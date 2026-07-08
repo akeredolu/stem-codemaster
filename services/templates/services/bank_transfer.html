@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Include Bootstrap Icons in case base template misses it -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --accent-color: #2563eb;
+        --accent-warning: #ea580c;
+    }
+
+    /* Floating Home Button */
+    .floating-home-btn {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 1050;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 12px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .floating-home-btn:hover {
+        color: var(--accent-color);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Custom Modern Card Design */
+    .instruction-card {
+        border: none;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    .instruction-header {
+        background: var(--primary-gradient);
+        color: #ffffff;
+        padding: 2.5rem 2rem;
+        position: relative;
+    }
+
+    /* Modern Display Ledger Box */
+    .ledger-display-box {
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+    }
+
+    .ledger-divider {
+        border-top: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* Action Instruction Warning Callout Banner */
+    .warning-callout {
+        background-color: #fff7ed;
+        border: 1px dashed #fed7aa;
+        color: #c2410c;
+        border-radius: 16px;
+    }
+
+    /* Interactive Copy Utility Styling */
+    .copy-trigger {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .copy-trigger:active {
+        transform: scale(0.9);
+    }
+
+    .letter-spacing-wide { letter-spacing: 0.05em; }
+    .text-xxs { font-size: 0.70rem; }
+</style>
+
+<!-- Main Container Layout Match - Centered & Two-Thirds Screen Area -->
+<div class="container min-vh-100 d-flex align-items-center py-5">
+    <div class="row justify-content-center w-100 m-0">
+        <div class="col-md-10 col-lg-8 px-0">
+            
+            <div class="instruction-card">
+                <!-- Header Segment with Premium Ledger Info Presentation -->
+                <div class="instruction-header text-center">
+                    <span class="text-white-50 text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Direct Settlement</span>
+                    <h3 class="fw-bold mb-4 text-white">Bank Transfer Instructions</h3>
+                    
+                    <div class="ledger-display-box p-4 text-start">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small">Bank Name:</span>
+                            <span class="text-white fw-bold">{{ bank_name }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-white-50 small">Account Name:</span>
+                            <span class="text-white-50 text-uppercase fw-semibold small">{{ account_name }}</span>
+                        </div>
+                        
+                        <div class="ledger-divider my-3"></div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-white-50 small">Account Number:</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-4 fw-extrabold text-white tracking-wide">{{ account_number }}</span>
+                                <button type="button" class="btn p-0 text-white-50 copy-trigger" onclick="copyAccount('{{ account_number }}', this)" title="Copy Account Number">
+                                    <i class="bi bi-copy fs-6"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="ledger-divider my-3"></div>
+
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <span class="text-white fw-bold d-block fs-6">Deposit Due Now</span>
+                                <small class="text-white-50 text-xxs text-uppercase fw-semibold">(10% Committal Fee)</small>
+                            </div>
+                            <h2 class="text-white fw-extrabold mb-0">
+                                ₦{% widthratio service_request.amount_due 10 1 %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content Body Context Form/Actions -->
+                <div class="card-body p-4 p-md-5 text-center">
+                    
+                    <!-- Form Warning Notice Messaging Interface Component -->
+                    <div class="warning-callout p-4 text-start shadow-sm mb-4 d-flex align-items-start gap-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 mt-1 opacity-75"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Action Required After Payment</h6>
+                            <p class="small mb-0 opacity-90">Please ensure you capture a clean screenshot or download your bank transaction receipt. Kindly transmit the proof via our platform portal, email, or direct WhatsApp support lines for verification updates.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 d-flex flex-column flex-sm-row justify-content-center align-items-center gap-3">
+                        <a href="{% url 'our_services' %}" class="btn btn-primary btn-lg px-4 py-3 rounded-3 fw-bold shadow-sm fs-6 w-100 w-sm-auto">
+                            <i class="bi bi-grid-fill me-2"></i> Explore Our Services
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg px-4 py-3 rounded-3 fw-semibold fs-6 w-100 w-sm-auto">
+                            <i class="bi bi-arrow-left-short fs-5 align-middle"></i> Back to Dashboard
+                        </a>
+                    </div>
+
+                </div>
+            </div> 
+            
+        </div>
+    </div>
+</div>
+
+<!-- Floating Navigation Home Link Module Element -->
+<a href="{% url 'home' %}" class="floating-home-btn" title="Return to Dashboard">
+    <i class="bi bi-arrow-left-short fs-5"></i> Back to Home
+</a>
+
+<!-- Copy-to-clipboard Logic Core Hook functionality -->
+<script>
+function copyAccount(number, element) {
+    navigator.clipboard.writeText(number).then(() => {
+        const icon = element.querySelector('i');
+        icon.classList.remove('bi-copy');
+        icon.classList.add('bi-check-lg', 'text-success');
+        
+        setTimeout(() => {
+            icon.classList.remove('bi-check-lg', 'text-success');
+            icon.classList.add('bi-copy');
+        }, 2000);
+    }).catch(err => {
+        console.error('Could not copy account number: ', err);
+    });
+}
+</script>
+{% endblock %}

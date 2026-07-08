@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}Stem CodeMaster Admin{% endblock %}
+
+{% block branding %}
+  <div id="site-name">
+    <a href="{% url 'admin:index' %}">
+      <strong>Stem CodeMaster Admin</strong>
+    </a>
+  </div>
+{% endblock %}
+
+{% block nav-global %}
+  {{ block.super }}
+  <li>
+    {% comment %}<a href="{% url 'admin_chat_dashboard' %}" target="_blank">💬 Chat Admin Panel</a>{% endcomment %}
+
+  </li>
+{% endblock %}
+
+{% block content %}
+  {% if custom_tabs %}
+    <div style="margin-bottom: 10px;">{{ custom_tabs|safe }}</div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+

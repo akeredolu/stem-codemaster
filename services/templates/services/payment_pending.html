@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --accent-color: #2563eb;
+        --accent-success: #16a34a;
+    }
+
+    /* Floating Home Button */
+    .floating-home-btn {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 1050;
+        background: #ffffff;
+        color: #0f172a;
+        padding: 12px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .floating-home-btn:hover {
+        color: var(--accent-color);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Custom Modern Card Design */
+    .success-card {
+        border: none;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+        background: #ffffff;
+        overflow: hidden;
+    }
+
+    .success-header {
+        background: var(--primary-gradient);
+        color: #ffffff;
+        padding: 3rem 2rem;
+        position: relative;
+    }
+
+    /* Animated Success Checkmark Ring */
+    .checkmark-wrapper {
+        width: 72px;
+        height: 72px;
+        background: rgba(22, 163, 74, 0.15);
+        color: #22c55e;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+        border: 2px solid rgba(34, 197, 94, 0.3);
+    }
+
+    /* Glassmorphic Summary Receipt Box */
+    .receipt-box {
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+    }
+
+    .breakdown-divider {
+        border-top: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* Custom Informational Status Notice */
+    .status-notice {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        border-radius: 16px;
+        padding: 1.25rem;
+    }
+
+    .letter-spacing-wide { letter-spacing: 0.05em; }
+    .text-xxs { font-size: 0.70rem; }
+</style>
+
+<div class="container min-vh-100 d-flex align-items-center py-5">
+    <div class="row justify-content-center w-100 m-0">
+        <div class="col-md-10 col-lg-8 px-0">
+            
+            <div class="success-card">
+                <div class="success-header text-center">
+                    <div class="checkmark-wrapper">
+                        <i class="bi bi-check-circle-fill fs-1"></i>
+                    </div>
+                    <span class="text-white-50 text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Receipt Logged</span>
+                    <h3 class="fw-bold mb-4 text-white">Payment Submitted</h3>
+                    
+                    <div class="receipt-box p-4 text-start">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-white-50 small">Service Requested:</span>
+                            <span class="text-white fw-semibold text-end ms-2">{{ service_request.service.name }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-white-50 small">Total Program Value:</span>
+                            <span class="text-white-50 fw-medium">₦{{ service_request.amount_due|floatformat:2 }}</span>
+                        </div>
+                        
+                        <div class="breakdown-divider my-3"></div>
+                        
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <span class="text-white fw-bold d-block fs-5">Deposit Received</span>
+                                <small class="text-white-50 text-xxs text-uppercase fw-semibold">(10% Committal Fee)</small>
+                            </div>
+                            <h2 class="text-white fw-extrabold mb-0">
+                                ₦{% widthratio service_request.amount_due 10 1 %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4 p-md-5 text-center">
+                    
+                    <div class="status-notice text-start shadow-sm mb-4 d-flex align-items-start gap-3">
+                        <i class="bi bi-shield-fill-check fs-4 mt-1 opacity-75"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1">Verification Processing</h6>
+                            <p class="small mb-0 opacity-90">Your transactional payment proof is currently under internal verification. Once cleared by operations, an official electronic receipt and onboarding instructions will be transmitted directly to your mailbox.</p>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mt-5 mb-3">
+                        Need real-time status updates? Get in touch with administration options directly:
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="https://mail.google.com/mail/?view=cm&to=code247.me@gmail.com&su=Assistance%20Request%20-%20{{ service_request.id }}" target="_blank" class="btn btn-outline-primary px-4 py-2 rounded-3 fw-semibold text-sm">
+                            <i class="bi bi-envelope-at-fill me-2"></i> Email Operations
+                        </a>
+                        <a href="https://wa.me/2348037523826" target="_blank" class="btn btn-success px-4 py-2 rounded-3 fw-semibold text-sm border-0 bg-success">
+                            <i class="bi bi-whatsapp me-2"></i> Chat via WhatsApp
+                        </a>
+                    </div>
+
+                </div>
+            </div> 
+            
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'home' %}" class="floating-home-btn" title="Return to Dashboard">
+    <i class="bi bi-arrow-left-short fs-5"></i> Back to Home
+</a>
+{% endblock %}

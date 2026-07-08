@@ -1,0 +1,246 @@
+/* Program container */
+.container {
+    display: flex;
+    flex-wrap: wrap; /* Ensures responsiveness */
+    justify-content: space-between;
+  }
+  
+  /* Columns */
+  .column {
+    flex: 1 calc(33.333% - 20px);
+    max-width: calc(33.333% - 20px);
+    padding: 15px;
+    margin: 10px; /* Space between columns */
+    
+    background-color: #f0f0f0; /* Light gray background */
+    border: 1px solid #ccc; /* Border for columns */
+    text-align: left;
+  }
+  
+  /* Adjust columns for small screens */
+  @media (max-width: 768px) {
+    .column {
+      flex: 100%; /* Full width for smaller screens */
+    }
+  }
+  
+  /*Courses css*/
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .container2 {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+    justify-content: space-between;
+    gap: 20px;
+    
+  }
+
+  .course {
+    flex: 1   calc(33.333% - 20px); /* Three columns */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .course img {
+    width: 100%;
+    height: auto;
+  }
+
+  .course h3 {
+    margin: 0;
+    padding: 15px;
+    background-color: #555;
+    color: white;
+    text-align: center;
+  }
+
+  .course p {
+    padding: 10px 15px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  @media screen and (max-width: 768px) {
+    .course {
+      flex: 1 1 calc(50% - 20px); /* Two columns */
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .course {
+      flex: 1 1 100%; /* One column */
+    }
+  }
+
+/*.. Classess & Fees css...*/
+
+/* Classes & Fees – Refined CSS */
+
+/* General table styling */
+table {
+  width: 85%;
+  max-width: 480px;
+  margin: 1rem auto;
+  border-collapse: collapse;
+}
+
+td {
+  width: 40%;
+  vertical-align: top;
+  padding: 10px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* List styles */
+ul {
+  margin: 0 0 10px 20px;
+  padding: 0;
+}
+
+li {
+  margin: 5px 0;
+}
+
+p {
+  margin: 10px 0;
+}
+
+/* Section container */
+.class-fee-countainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Column card */
+.column-1 {
+  flex: 0 0 48%;   /* Force ~2 per row */
+  max-width: 45%;  /* Lock width */
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.column-1:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Inner content styling */
+.content {
+  padding: 20px;
+  line-height: 1.6;
+  font-size: 1rem;
+  color: #333;
+}
+
+.content ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.content ul li {
+  margin: 5px 0;
+}
+
+/* Header styling */
+.header.text-center {
+  font-size: 1.4rem;
+  font-weight: bold;
+  padding: 15px 0;
+  background-color: #f5f8fa;
+  text-align: center;
+  color: #003366;
+  border-bottom: 1px solid #eee;
+}
+
+/* Responsive handling */
+@media screen and (max-width: 768px) {
+  .column-1 {
+    flex: 0 o 100%;
+    max-width: 85%;
+  }
+
+  table {
+    width: 85%;
+  }
+
+  td {
+    display: block;
+    width: 85%;
+    box-sizing: border-box;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/* === Testimonial Carousel Styles === */
+.testimonial-slide {
+  text-align: center;
+  padding: 30px 20px;
+  border-radius: 1rem;
+  background-color: #f9f9f9;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.testimonial-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin: 0 auto 15px;
+  border: 3px solid #0d6efd;
+}
+
+.testimonial-name {
+  font-weight: bold;
+  margin-top: 10px;
+  color: #333;
+}
+
+.testimonial-occupation {
+  font-size: 0.9rem;
+  color: #777;
+  margin-bottom: 10px;
+}
+
+.swiper {
+  padding: 20px 0;
+}
+
+
+/* === Course Tab Styles === */
+.course-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.course-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+}

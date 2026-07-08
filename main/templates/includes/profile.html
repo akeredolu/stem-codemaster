@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block hide_navbar %}{% with hide_navbar=True %}{% endwith %}{% endblock %}
+{% block show_footer %}{% with show=False %}{% endwith %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold display-5">Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+    <p class="text-muted fs-5">Here's your personal dashboard to access courses, materials, and more.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Profile + Tools -->
+    <div class="col-lg-4">
+      {% include 'main/includes/profile_card.html' %}
+      {% include 'main/includes/notifications_card.html' %}
+      {% include 'main/includes/report_issue_form.html' %}
+      {% include 'main/includes/submitted_complaints.html' %}
+    </div>
+
+    <!-- Right Column: Tabs + Dynamic Content -->
+    <div class="col-lg-8">
+      {% include 'main/includes/dashboard_tabs.html' %}
+
+      <div class="tab-content" id="dashboardTabsContent">
+        {% include 'main/includes/tab_courses.html' %}
+        {% include 'main/includes/tab_timetable.html' %}
+        {% include 'main/includes/tab_admin_messages.html' %}
+        {% include 'main/includes/tab_materials.html' %}
+        {% include 'main/includes/tab_live_sessions.html' %}
+        {% include 'main/includes/tab_assignments.html' %}
+        {% include 'main/includes/tab_schedule.html' %}
+        {% include 'main/includes/tab_chat.html' %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  var dashboardTabs = new bootstrap.Tab(document.querySelector('#dashboardTabs button.active'));
+</script>
+{% endblock %}
+

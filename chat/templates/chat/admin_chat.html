@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Chat</title>
+    <style>
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        .msg { margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+<h3>Admin Chat Window</h3>
+<p>Chatting with: <strong>{{ chat_with }}</strong></p>
+
+<div id="messages"></div>
+
+<input id="messageInput" placeholder="Type reply…" style="width: 70%;">
+<button onclick="sendMessage()">Send</button>
+
+<script>
+
+var roomName = "{{ room_name }}";
+
+var chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+);
+
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+
+    if (data.message) {
+        addMessage(data.sender, data.message);
+    }
+};
+
+function addMessage(sender, msg) {
+    const box = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.classList.add("msg");
+    div.innerHTML = "<strong>" + sender + ":</strong> " + msg;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+
+function sendMessage() {
+    const input = document.getElementById("messageInput");
+    chatSocket.send(JSON.stringify({
+        "message": input.value,
+        "sender_type": "admin",
+        "sender": "admin"
+    }));
+    input.value = "";
+}
+
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+  body {
+    background-color: #e6f2ff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+</style>
+
+<div class="card shadow-sm border border-gray-200" style="background: white; border-radius: 12px; width: 100%; max-width: 400px; padding: 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+  <h2 class="text-center mb-4" style="font-size: 1.5rem; font-weight: 600; color: #1f2937;">
+    📣 Report an Issue
+  </h2>
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form|crispy }}
+
+    <button type="submit" style="width: 100%; background: white; color: #2563eb; font-weight: 600; padding: 10px; border: 1px solid #2563eb; border-radius: 8px; transition: background 0.3s;">
+      Submit
+    </button>
+  </form>
+
+  <form method="post" action="{% url 'logout' %}" class="mt-4">
+    {% csrf_token %}
+    <button type="submit" style="width: 100%; color: #dc2626; font-weight: 500; border: 1px solid #dc2626; padding: 10px; border-radius: 8px; background: white; transition: background 0.3s;">
+      Logout
+    </button>
+  </form>
+</div>
+{% endblock %}
+

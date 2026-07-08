@@ -1,0 +1,18 @@
+<h2>My Assignments</h2>
+<ul>
+  {% for a in assignments %}
+    <li>
+      <strong>{{ a.title }}</strong><br>
+      {% if a.instructions %}
+        {{ a.instructions|linebreaks }}<br>
+      {% endif %}
+      {% if a.due_date %}
+        <small>Due: {{ a.due_date|date:"D, M d, Y" }}</small><br>
+      {% endif %}
+      <a href="{% url 'assignment_detail' a.id %}">View / Submit</a>
+    </li>
+  {% empty %}
+    <p>No assignments yet.</p>
+  {% endfor %}
+</ul>
+

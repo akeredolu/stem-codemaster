@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Chat with {{ room.name }}{% endblock %}
+
+{% block content %}
+<h1>Chat with {{ room.name }}</h1>
+
+<div id="chat-container" style="border:1px solid #ccc; padding:10px; height:400px; overflow-y:scroll; background:#f9f9f9;">
+    {% for msg in messages %}
+        <div style="margin-bottom:10px;">
+            {% if msg.sender and msg.sender.username == admin_username %}
+                <div style="text-align:right;">
+                    <b>Admin:</b> {{ msg.content }} <small>{{ msg.timestamp|date:"H:i" }}</small>
+                </div>
+            {% else %}
+                <div style="text-align:left;">
+                    <b>
+                        {% if msg.sender %}
+                            {{ msg.sender.username }}
+                        {% else %}
+                            {{ msg.guest_name|default:"Guest" }}
+                        {% endif %}
+                    </b>:
+                    {{ msg.content }}
+                    <small>{{ msg.timestamp|date:"H:i" }}</small>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No messages yet.</p>
+    {% endfor %}
+</div>
+
+<form id="chat-message-form" style="margin-top:10px;">
+    <input id="chat-message-input" type="text" placeholder="Type your message..." style="width:80%; padding:5px;" />
+    <button type="submit" style="padding:5px 10px;">Send</button>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const chatContainer = document.querySelector("#chat-container");
+    const chatForm = document.querySelector("#chat-message-form");
+    const chatInput = document.querySelector("#chat-message-input");
+
+    const adminUsername = "{{ admin_username }}";
+
+    // Normalize room name to lowercase
+    const roomName = "{{ room.name|lower }}";
+
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const chatSocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/chat/${roomName}/`);
+
+    function appendMessage(sender, message) {
+        const msgEl = document.createElement("div");
+        msgEl.style.marginBottom = "10px";
+
+        if (sender === adminUsername) {
+            msgEl.style.textAlign = "right";
+            msgEl.innerHTML = `<b>Admin:</b> ${message} <small>${new Date().toLocaleTimeString()}</small>`;
+        } else {
+            msgEl.style.textAlign = "left";
+            msgEl.innerHTML = `<b>${sender}:</b> ${message} <small>${new Date().toLocaleTimeString()}</small>`;
+        }
+
+        chatContainer.appendChild(msgEl);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "admin_status") {
+            console.log("Admin status update:", data.online);
+            return;
+        }
+
+        // Ignore our own admin messages (already appended locally)
+        if (data.sender === adminUsername) return;
+
+        if (data.type === "chat_message" && data.message) {
+            const sender = data.sender || "Guest";
+            appendMessage(sender, data.message);
+        }
+    };
+
+    chatSocket.onclose = function(e) {
+        const msgEl = document.createElement("div");
+        msgEl.style.marginBottom = "10px";
+        msgEl.style.textAlign = "center";
+        msgEl.innerHTML = `<span style="color:#f00;">Chat disconnected</span>`;
+        chatContainer.appendChild(msgEl);
+    };
+
+    chatForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Send as admin
+        chatSocket.send(JSON.stringify({
+            message: message,
+            sender_type: "admin",
+            sender: adminUsername
+        }));
+
+        // Append locally
+        appendMessage(adminUsername, message);
+        chatInput.value = "";
+    });
+});
+</script>
+
+{% endblock %}
+

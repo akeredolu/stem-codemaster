@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">📚 My Assignments</h2>
+  
+  {% if assignments %}
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Course</th>
+        <th>Due Date</th>
+        <th>File</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in assignments %}
+      <tr>
+        <td>{{ a.title }}</td>
+        <td>{{ a.course.title }}</td>
+        <td>{{ a.due_date }}</td>
+        <td>
+          {% if a.file %}
+            <a href="{{ a.file.url }}" target="_blank">📎 Download</a>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          {% if a.id in submitted_ids %}
+            ✅ Submitted
+          {% else %}
+            ⏳ Pending
+          {% endif %}
+        </td>
+        <td>
+          {% if a.id not in submitted_ids %}
+          <a href="{% url 'submit_assignment' a.id %}" class="btn btn-primary btn-sm">Submit</a>
+          {% else %}
+          <button class="btn btn-secondary btn-sm" disabled>Done</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No assignments yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="p-6 bg-white rounded shadow-md max-w-4xl mx-auto">
+  <h2 class="text-xl font-bold mb-4">📤 Your Assignments</h2>
+  {% if assignments %}
+    <ul class="space-y-3">
+      {% for assignment in assignments %}
+        <li class="border-b pb-2">
+          <p class="font-semibold">{{ assignment.title }}</p>
+          <p class="text-sm text-gray-600">{{ assignment.instructions|default:"No instructions provided." }}</p>
+          <p class="text-sm text-gray-500">Due: {{ assignment.due_date }}</p>
+
+          {# Change button text if already submitted #}
+          {% if submissions_dict and assignment.id in submissions_dict %}
+            <a href="{% url 'submit_assignment' assignment.id %}" class="text-blue-600 hover:underline">Update Submission</a>
+          {% else %}
+            <a href="{% url 'submit_assignment' assignment.id %}" class="text-blue-600 hover:underline">Submit</a>
+          {% endif %}
+
+          {# Show submission details if they exist #}
+          {% if submissions_dict and assignment.id in submissions_dict %}
+            {% with submission=submissions_dict[assignment.id] %}
+              <div class="mt-2 text-sm">
+                <p class="text-green-600">✅ Submitted on {{ submission.submitted_at }}</p>
+
+                {% if submission.correction_file %}
+                  <p>
+                    📥 <a href="{{ submission.correction_file.url }}" class="text-blue-600 hover:underline" download>
+                      Download Correction
+                    </a>
+                  </p>
+                {% endif %}
+
+                {% if submission.feedback_comments %}
+                  <div class="bg-gray-100 p-2 mt-1 rounded">
+                    <strong>Feedback:</strong>
+                    <p>{{ submission.feedback_comments }}</p>
+                  </div>
+                {% endif %}
+              </div>
+            {% endwith %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No assignments available.</p>
+  {% endif %}
+</div>
+{% endblock %}
+

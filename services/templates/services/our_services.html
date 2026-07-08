@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<!-- Premium Framework Assets Preload Setup -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+<style>
+    :root {
+        --brand-slate: #0f172a;
+        --brand-blue: #2563eb;
+        --brand-blue-hover: #1d4ed8;
+        --bg-canvas: #f8fafc;
+        --card-border: rgba(226, 232, 240, 0.8);
+        --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+
+    body {
+        background-color: var(--bg-canvas);
+    }
+
+    /* Floating Navigation System */
+    .floating-home-btn {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 1050;
+        background: #ffffff;
+        color: var(--brand-slate);
+        padding: 12px 20px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .floating-home-btn:hover {
+        color: var(--brand-blue);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Premium Dynamic Hero Section */
+    .premium-hero {
+        background: var(--primary-gradient);
+        position: relative;
+        padding: 6rem 0 7rem 0;
+        overflow: hidden;
+    }
+
+    .premium-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 24px 24px;
+        opacity: 0.7;
+    }
+
+    /* Elite Interactive Card Engine */
+    .service-premium-card {
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        background: #ffffff;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .service-premium-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+        border-color: rgba(37, 99, 235, 0.2);
+    }
+
+    .service-img-container {
+        background-color: #f1f5f9;
+        border-radius: 16px;
+        height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1.25rem;
+        padding: 1.5rem;
+        transition: background-color 0.3s;
+    }
+
+    .service-premium-card:hover .service-img-container {
+        background-color: #eff6ff;
+    }
+
+    /* Modern Luxury Warning Ledger Box */
+    .policy-ledger-banner {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .policy-ledger-banner::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: rgba(37, 99, 235, 0.15);
+        filter: blur(60px);
+        border-radius: 50%;
+    }
+
+    /* Unified Processing Form Card Styling */
+    .workspace-submission-card {
+        border: none;
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.04);
+        border: 1px solid var(--card-border);
+    }
+
+    /* Testimonial Presentation Overhauls */
+    .testimonial-premium-bubble {
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        background: #ffffff;
+        padding: 2.5rem;
+    }
+
+    .client-avatar-frame {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #ffffff;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+
+    .assistance-pill-btn {
+        border: 1px solid var(--card-border);
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 1.25rem;
+        min-width: 240px;
+        transition: all 0.3s;
+        text-decoration: none;
+        color: var(--brand-slate);
+    }
+
+    .assistance-pill-btn:hover {
+        transform: translateY(-3px);
+        border-color: var(--brand-blue);
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.08);
+        color: var(--brand-blue);
+    }
+
+    .letter-spacing-wide { letter-spacing: 0.06em; }
+    .text-justify { text-align: justify; }
+</style>
+
+<!-- Hero Hub Section Area -->
+<section class="premium-hero text-white text-center">
+    <div class="container position-relative z-1">
+        <span class="text-blue-400 text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-2">Stem CodeMaster</span>
+        <h1 class="display-3 fw-extrabold mb-3 tracking-tight text-white">Professional Services We Offer</h1>
+        <p class="lead text-white-50 max-w-2xl mx-auto mb-4">Explore our wide range of world-class technology solutions custom-tailored for individuals, businesses, and academic institutions.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="#services-list" class="btn btn-light btn-lg px-4 py-3 fw-bold rounded-3 fs-6 shadow-sm">
+                <i class="bi bi-grid-fill me-2 text-primary"></i> Browse Architecture Catalog
+            </a>
+            <a href="{% url 'home' %}" class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold rounded-3 fs-6">
+                <i class="bi bi-house me-2"></i> Dashboard Home
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Main System Services Section Grid -->
+<section id="services-list" class="py-5">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="text-primary text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Capabilities</span>
+            <h2 class="fw-extrabold text-dark tracking-tight">Our Core Services</h2>
+            <div class="mx-auto bg-primary rounded" style="width: 50px; height: 3px; margin-top: 0.75rem;"></div>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
+                <div class="card service-premium-card w-100 shadow-sm d-flex flex-column">
+                    {% if service.icon %}
+                    <div class="service-img-container">
+                        <img src="{{ service.icon.url }}" class="img-fluid" alt="{{ service.name }}" style="max-height: 120px; object-fit: contain;">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="card-body p-4 d-flex flex-column pt-2">
+                        <h5 class="card-title fw-bold text-dark mb-3 text-center">{{ service.name }}</h5>
+                        <p class="card-text text-muted text-justify small mb-4 flex-grow-1">
+                            {{ service.description|truncatewords:25 }}
+                        </p>
+                        
+                        <div class="mt-auto d-grid gap-2">
+                            <button type="button" class="btn btn-primary py-2.5 rounded-3 fw-bold fs-7 shadow-sm" data-bs-toggle="modal" data-bs-target="#serviceModal{{ service.id }}">
+                                <i class="bi bi-arrow-right-circle-fill me-2"></i> View &amp; Request Track
+                            </button>
+                            {% if service.brochure %}
+                            <a href="{{ service.brochure_download_url }}" class="btn btn-outline-secondary py-2.5 rounded-3 fw-semibold fs-7">
+                                <i class="bi bi-file-earmark-arrow-down me-1"></i> Documentation PDF
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contextual Operational Details Modal Infrastructure -->
+            <div class="modal fade" id="serviceModal{{ service.id }}" tabindex="-1" aria-labelledby="serviceModalLabel{{ service.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+                        <div class="modal-header border-0 bg-light p-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <h5 class="modal-title fw-extrabold text-dark mb-0" id="serviceModalLabel{{ service.id }}">{{ service.name }}</h5>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4 p-md-5">
+                            <h6 class="fw-bold text-uppercase text-primary small tracking-wider mb-2">Scope of Operations</h6>
+                            <p class="text-muted lh-lg text-justify mb-4">{{ service.description }}</p>
+                            
+                            <hr class="my-4 rgba(0,0,0,0.05)">
+                            
+                            <!-- Dynamic Internal Routing Quick Form Action Trigger -->
+                            <div class="bg-light p-4 rounded-3 border">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                    <h6 class="fw-bold text-dark mb-0">Express Request Initialization</h6>
+                                </div>
+                                <form method="post" action="{% url 'our_services' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="service" value="{{ service.id }}">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-semibold text-muted">Full Name</label>
+                                            {{ form.name|add_class:"form-control bg-white" }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-semibold text-muted">Corporate Email</label>
+                                            {{ form.email|add_class:"form-control bg-white" }}
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label small fw-semibold text-muted">Contact Mobile Line</label>
+                                            {{ form.phone|add_class:"form-control bg-white" }}
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label small fw-semibold text-muted">Project Blueprint Requirements &amp; Timelines</label>
+                                            {{ form.details|add_class:"form-control bg-white" }}
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100 py-3 rounded-3 fw-bold mt-4 shadow-sm">
+                                        <i class="bi bi-check-circle-fill me-2"></i> Dispatch Deployment Request
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Premium Central Regulatory Policy Display Box Segment -->
+        <div class="policy-ledger-banner text-white p-4 p-md-5 mt-5 shadow-lg max-w-4xl mx-auto">
+            <div class="row align-items-center position-relative z-1 g-4">
+                <div class="col-md-2 text-center text-md-start">
+                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
+                        <i class="bi bi-shield-check fs-2 text-white"></i>
+                    </div>
+                </div>
+                <div class="col-md-10">
+                    <h5 class="fw-extrabold mb-2 tracking-tight text-white">Engagement Security &amp; Initiation Policy</h5>
+                    <p class="mb-0 text-white-50 small lh-lg text-justify">
+                        To initiate any of our corporate tech pipelines, client files undergo immediate prioritization upon validation of a <strong>10% service commencement deposit</strong> computed from total project validation costs. The remaining 90% balance structures uniformly down to execution benchmarks upon verified sign-off delivery. This maintains absolute operational transparency and contractual mutual protection across every development block.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+<!-- Workspace Form Module Area Block -->
+<section class="py-5 bg-light border-top border-bottom">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="text-primary text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Central Intake</span>
+            <h2 class="fw-extrabold text-dark tracking-tight">Request a Custom Service</h2>
+            <div class="mx-auto bg-primary rounded" style="width: 50px; height: 3px; margin-top: 0.75rem;"></div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card workspace-submission-card p-4 p-md-5">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-dark mb-1">Select Target Technology Workspace Track</label>
+                                {{ form.service|add_class:"form-select form-select-lg rounded-3 fs-6" }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">Full Legal Name</label>
+                                {{ form.name|add_class:"form-control form-control-lg rounded-3 fs-6" }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark mb-1">Primary Email Address</label>
+                                {{ form.email|add_class:"form-control form-control-lg rounded-3 fs-6" }}
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-dark mb-1">Mobile Contact Phone Line</label>
+                                {{ form.phone|add_class:"form-control form-control-lg rounded-3 fs-6" }}
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-dark mb-1">Detailed Technical Specifications or Project Objectives</label>
+                                {{ form.details|add_class:"form-control form-control-lg rounded-3 fs-6" }}
+                            </div>
+                        </div>
+                        <div class="text-center mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-3 fw-bold fs-6 shadow">
+                                <i class="bi bi-send-fill me-2"></i> Transmit Request File
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Review Testimonials Showcase Section --> 
+<section class="py-5 bg-white">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <span class="text-primary text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Validation</span>
+            <h2 class="fw-extrabold text-dark tracking-tight">What Our Partners Say</h2>
+            <div class="mx-auto bg-primary rounded" style="width: 50px; height: 3px; margin-top: 0.75rem;"></div>
+        </div>
+
+        <!-- Professional Swiper Implementation Wrapper -->
+        <div class="swiper testimonial-swiper px-2 py-4">
+            <div class="swiper-wrapper">
+                {% for testimonial in testimonials %}
+                <div class="swiper-slide h-auto">
+                    <div class="testimonial-premium-bubble h-100 shadow-sm d-flex flex-column justify-content-between text-center">
+                        <div>
+                            <i class="bi bi-quote fs-1 text-primary opacity-20 d-block mb-2"></i>
+                            <p class="fst-italic text-muted lh-lg fs-6 mb-4">"{{ testimonial.feedback }}"</p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-center mb-3">
+                                {% if testimonial.photo %}
+                                <img src="{{ testimonial.photo.url }}" class="client-avatar-frame" alt="{{ testimonial.client_name }}">
+                                {% else %}
+                                <img src="{% static 'assets/img/default-profile.jpg' %}" class="client-avatar-frame" alt="Default Portfolio Identity Profile">
+                                {% endif %}
+                            </div>
+                            <div class="fw-bold text-dark mb-0">{{ testimonial.client_name }}</div>
+                            {% if testimonial.client_title %}
+                            <small class="text-primary tracking-wide text-uppercase fw-semibold text-xxs d-block mt-1">{{ testimonial.client_title }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Controls System Elements -->
+            <div class="swiper-button-prev d-none d-md-flex text-primary"></div>
+            <div class="swiper-button-next d-none d-md-flex text-primary"></div>
+            <div class="swiper-pagination mt-4"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Enterprise Level Assistance Help Center Section Anchor -->
+<section class="py-5 bg-light border-top text-center">
+    <div class="container py-4">
+        <span class="text-primary text-uppercase small tracking-widest letter-spacing-wide fw-bold d-block mb-1">Immediate Support</span>
+        <h2 class="fw-extrabold text-dark tracking-tight mb-2">Need Direct Assistance?</h2>
+        <p class="text-muted small max-w-md mx-auto mb-5">Connect directly with our operations desk routing team to expedite custom platform integrations or complex project scopes.</p>
+        
+        <div class="d-flex justify-content-center gap-4 flex-wrap align-items-center">
+            <a href="tel:+2348037523826" class="assistance-pill-btn d-flex align-items-center gap-3 text-start">
+                <div class="bg-primary-subtle text-primary p-2.5 rounded-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-telephone-fill fs-5"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block uppercase fw-bold" style="font-size:0.65rem;">Voice Channel</small>
+                    <span class="fw-bold text-dark">+234 803 752 3826</span>
+                </div>
+            </a>
+            
+            <a href="https://mail.google.com/mail/?view=cm&to=code247.me@gmail.com&su=Service%20Request" target="_blank" class="assistance-pill-btn d-flex align-items-center gap-3 text-start">
+                <div class="bg-primary-subtle text-primary p-2.5 rounded-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-envelope-at-fill fs-5"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block uppercase fw-bold" style="font-size:0.65rem;">Secure Email Desk</small>
+                    <span class="fw-bold text-dark">code247.me@gmail.com</span>
+                </div>
+            </a>
+            
+            <a href="https://wa.me/2348037523826" target="_blank" class="assistance-pill-btn d-flex align-items-center gap-3 text-start">
+                <div class="bg-success-subtle text-success p-2.5 rounded-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-whatsapp fs-5"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block uppercase fw-bold" style="font-size:0.65rem;">WhatsApp Encryption</small>
+                    <span class="fw-bold text-dark">Message Operations</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Uniform Global Application Anchor Navigation Node Component -->
+<a href="{% url 'home' %}" class="floating-home-btn" title="Return to Dashboard Terminal">
+    <i class="bi bi-arrow-left-short fs-5"></i> Back to Home
+</a>
+
+<!-- Embedded JavaScript Framework Configuration Context -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const swiper = new Swiper('.testimonial-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 24,
+            grabCursor: true,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+                dynamicBullets: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            breakpoints: {
+                768: {
+                    slidesPerView: 2,
+                    spaceBetween: 24
+                },
+                1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

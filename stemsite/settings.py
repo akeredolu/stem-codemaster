@@ -1,0 +1,268 @@
+import os
+import dj_database_url
+from pathlib import Path
+import environ
+import urllib.parse
+
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+BASE_DIR = Path(__file__).resolve().parent.parent  # stemsite/stemsite -> stemsite
+
+# Initialise environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+ENV_FILE = BASE_DIR / ".env"
+if ENV_FILE.exists():
+    env.read_env(ENV_FILE)
+else:
+    print("⚠️ .env file not found, relying on system env vars")
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# SECURITY
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+
+# For local development with your local PostgreSQL
+DEBUG = env.bool("DJANGO_DEBUG", default=False)
+
+ALLOWED_HOSTS = env.list(
+    'DJANGO_ALLOWED_HOSTS',
+    default=['localhost', '127.0.0.1']  
+)
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+
+CSRF_TRUSTED_ORIGINS = (
+    ["https://stem-codemaster.onrender.com"] if not DEBUG else []
+)
+
+
+# Paystack settings
+PAYSTACK_SECRET_KEY = env('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = env('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_VERIFY_URL = env('PAYSTACK_VERIFY_URL')
+
+
+# =========================
+# EMAIL CONFIGURATION (Brevo SMTP + Verified Gmail sender)
+# =========================
+BREVO_API_KEY = env("BREVO_API_KEY")
+BREVO_SENDER_EMAIL = env("BREVO_SENDER_EMAIL")
+BREVO_SENDER_NAME = env("BREVO_SENDER_NAME")
+
+# Admin / Contact notification emails (Brevo HTTP API)
+ADMIN_EMAIL = env("ADMIN_EMAIL")
+CONTACT_NOTIFICATION_EMAIL = env("CONTACT_NOTIFICATION_EMAIL")
+
+ADMINS = [
+    ("Admin", ADMIN_EMAIL),
+]
+
+# Application definition
+INSTALLED_APPS = [
+    'channels',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    
+    "cloudinary",
+    "cloudinary_storage",
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'widget_tweaks',
+
+    'main',  
+    "chat",   
+    'services',
+]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        
+    'main.middleware.ForcePasswordChangeMiddleware',
+
+]
+
+ROOT_URLCONF = 'stemsite.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        
+        'DIRS': [
+            BASE_DIR / 'main' / 'templates',
+            BASE_DIR / 'chat' / 'templates',
+            
+        ],
+        
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'main.context_processors.guest_chat_id',
+            ],
+        },
+    },
+]
+
+
+WSGI_APPLICATION = 'stemsite.wsgi.application'
+
+
+ASGI_APPLICATION = 'stemsite.asgi.application' 
+
+
+# 1. Fetch the base URL (uses Render's environment on production, local fallback)
+REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379")
+
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+else:
+    parsed_url = urllib.parse.urlparse(REDIS_URL)
+    
+    # If using Render Internal Redis (starts with red-), no SSL is needed internally!
+    if "red-" in REDIS_URL and not REDIS_URL.startswith("rediss://"):
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {
+                    "hosts": [REDIS_URL],
+                },
+            },
+        }
+    else:
+        # Fallback for External Redis connections requiring TLS (rediss://)
+        if REDIS_URL.startswith("redis://"):
+            REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
+            parsed_url = urllib.parse.urlparse(REDIS_URL)
+
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {
+                    "hosts": [{
+                        "address": (parsed_url.hostname, parsed_url.port or 6379),
+                        "password": parsed_url.password,
+                        "ssl": True,
+                        "ssl_cert_reqs": None,
+                    }],
+                },
+            },
+        }
+    
+    
+# =========================
+# DATABASE CONFIGURATION (LOCAL + RENDER/AIVEN)
+# =========================
+DATABASE_URL = env("DATABASE_URL")
+
+DATABASES = {
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True,
+    )
+}
+
+# Explicitly force options for production environments
+if not env.bool("DJANGO_DEBUG", default=False):
+    DATABASES["default"]["OPTIONS"] = {
+        "sslmode": "require",
+    }
+
+
+# Authentication
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'portal'
+LOGOUT_REDIRECT_URL = '/'
+
+# Custom error handler
+HANDLER403 = 'main.views.custom_403_view'
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+      {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 6},
+    },
+]
+
+# Internationalization
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# Static files
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'main' / 'static']  # development static files
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # where collectstatic gathers static files
+
+# =========================
+# CLOUDINARY CONFIG
+# =========================
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": env("CLOUDINARY_API_KEY"),
+    "API_SECRET": env("CLOUDINARY_API_SECRET"),
+}
+
+# =========================
+# STORAGE CONFIG (DJANGO 5+)
+# =========================
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",  # <-- Change this line
+    },
+}
+
+#MEDIA_URL = "/"
+
+
+# Domain handling
+if DEBUG:  # Development
+    SITE_DOMAIN = "http://127.0.0.1:8000"
+else:      # Production
+    # Use your actual live Render URL here!
+    SITE_DOMAIN = "https://stem-codemaster.onrender.com"
+#----------Change to your real URL in Production ------------
+SITE_URL = SITE_DOMAIN
+
+

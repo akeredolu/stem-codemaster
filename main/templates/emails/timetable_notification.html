@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Class Scheduled</title>
+</head>
+<body>
+
+    <p>Hello {{ student_name }},</p>
+
+    <p>
+        A new class schedule has been added for
+        <strong>{{ course_title }}</strong>.
+    </p>
+
+    <p>
+        🗓 <strong>Date:</strong> {{ class_date }} <br>
+        ⏰ <strong>Time:</strong> {{ start_time }} – {{ end_time }}
+    </p>
+
+    {% if instructor_name %}
+        <p><strong>Instructor:</strong> {{ instructor_name }}</p>
+    {% endif %}
+
+    {% if join_link %}
+        <p>
+            <strong>Join Link:</strong>
+            <a href="{{ join_link }}">{{ join_link }}</a>
+        </p>
+    {% endif %}
+
+    <p>Thank you!</p>
+
+</body>
+</html>
+

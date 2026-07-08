@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin ↔ Guest Chat</title>
+    <style>
+        body { font-family: Arial; }
+        #messages { height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: scroll; }
+        .sent { text-align: right; color: blue; }
+        .received { text-align: left; color: green; }
+    </style>
+</head>
+<body>
+
+<h2>Chat with Guest {{ guest_id }}</h2>
+
+<div id="messages">
+    {% for msg in messages %}
+        <p class="{% if msg.sender == 'admin' %}sent{% else %}received{% endif %}">
+            {{ msg.sender }}: {{ msg.message }}
+        </p>
+    {% endfor %}
+</div>
+
+<input id="messageInput" type="text" placeholder="Type reply..." />
+<button onclick="sendMessage()">Send</button>
+
+<script>
+    const roomName = "{{ room_name }}";
+
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/chat/' + roomName + '/'
+    );
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        let p = document.createElement("p");
+        p.innerText = data.sender + ": " + data.message;
+
+        if (data.sender === "admin") {
+            p.className = "sent";
+        } else {
+            p.className = "received";
+        }
+
+        document.getElementById("messages").appendChild(p);
+    };
+
+    function sendMessage() {
+        const message = document.getElementById("messageInput").value.trim();
+        if (message === "") return;
+
+        chatSocket.send(JSON.stringify({
+            "message": message,
+            "sender": "admin",
+            "receiver": "guest",
+            "room_name": roomName
+        }));
+
+        document.getElementById("messageInput").value = "";
+    }
+</script>
+
+</body>
+</html>
+
