@@ -163,10 +163,16 @@ DATABASE_URL = env("DATABASE_URL")
 DATABASES = {
     "default": dj_database_url.parse(
         DATABASE_URL,
-        conn_max_age=600,
+        conn_max_age=30,
         ssl_require=True,
     )
 }
+
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
+DATABASES["default"].setdefault("OPTIONS", {})
+DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10
+
 
 # Explicitly force options for production environments
 if not env.bool("DJANGO_DEBUG", default=False):
