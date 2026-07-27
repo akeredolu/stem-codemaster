@@ -104,7 +104,7 @@ class ServiceRequestAdmin(admin.ModelAdmin):
             balance_display = float(balance_decimal)
 
             payment_url = request.build_absolute_uri(reverse("payment_page", args=[obj.id]))
-            subject = "Payment Link – STEM CodeMaster"
+            subject = "Payment Link – STEM Code"
             
             html_content = (
                 f"<p>Hello {obj.name},</p>"

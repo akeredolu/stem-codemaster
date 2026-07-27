@@ -4,7 +4,7 @@ def send_activation_email(enrollment):
     if enrollment.is_activation_email_sent:
         return False  # Already sent, skip
 
-    subject = "Welcome to STEM CodeMaster – Activate Your Account"
+    subject = "Welcome to STEM Code – Activate Your Account"
     message = (
         f"Hello {enrollment.user.first_name},\n\n"
         "Your account has been activated successfully. "

@@ -2,7 +2,7 @@ import os
 import dj_database_url
 from pathlib import Path
 import environ
-import urllib.parse
+
 
 import cloudinary
 import cloudinary.uploader
@@ -32,7 +32,7 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 
 ALLOWED_HOSTS = env.list(
     'DJANGO_ALLOWED_HOSTS',
-    default=['localhost', '127.0.0.1']  
+    default=['localhost', '127.0.0.1', 'stem-codemaster-hkau.onrender.com', 'stemcode.com.ng', 'www.stemcode.com.ng']  
 )
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -41,7 +41,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 
 CSRF_TRUSTED_ORIGINS = (
-    ["https://stem-codemaster.onrender.com"] if not DEBUG else []
+    ["https://stem-codemaster-hkau.onrender.com", "https://stemcode.com.ng", "https://www.stemcode.com.ng"] if not DEBUG else []
 )
 
 
@@ -136,51 +136,24 @@ WSGI_APPLICATION = 'stemsite.wsgi.application'
 ASGI_APPLICATION = 'stemsite.asgi.application' 
 
 
-# 1. Fetch the base URL (uses Render's environment on production, local fallback)
-REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379")
+# =========================
+# REDIS / CHANNELS CONFIGURATION
+# =========================
 
-if DEBUG:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [REDIS_URL],
-            },
+REDIS_URL = env(
+    "REDIS_URL",
+    default="redis://127.0.0.1:6379"
+)
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
         },
-    }
-else:
-    parsed_url = urllib.parse.urlparse(REDIS_URL)
-    
-    # If using Render Internal Redis (starts with red-), no SSL is needed internally!
-    if "red-" in REDIS_URL and not REDIS_URL.startswith("rediss://"):
-        CHANNEL_LAYERS = {
-            "default": {
-                "BACKEND": "channels_redis.core.RedisChannelLayer",
-                "CONFIG": {
-                    "hosts": [REDIS_URL],
-                },
-            },
-        }
-    else:
-        # Fallback for External Redis connections requiring TLS (rediss://)
-        if REDIS_URL.startswith("redis://"):
-            REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
-            parsed_url = urllib.parse.urlparse(REDIS_URL)
+    },
+}
 
-        CHANNEL_LAYERS = {
-            "default": {
-                "BACKEND": "channels_redis.core.RedisChannelLayer",
-                "CONFIG": {
-                    "hosts": [{
-                        "address": (parsed_url.hostname, parsed_url.port or 6379),
-                        "password": parsed_url.password,
-                        "ssl": True,
-                        "ssl_cert_reqs": None,
-                    }],
-                },
-            },
-        }
-    
     
 # =========================
 # DATABASE CONFIGURATION (LOCAL + RENDER/AIVEN)
@@ -256,13 +229,17 @@ STORAGES = {
 #MEDIA_URL = "/"
 
 
-# Domain handling
-if DEBUG:  # Development
+if DEBUG:
     SITE_DOMAIN = "http://127.0.0.1:8000"
-else:      # Production
-    # Use your actual live Render URL here!
-    SITE_DOMAIN = "https://stem-codemaster.onrender.com"
-#----------Change to your real URL in Production ------------
+else:
+    SITE_DOMAIN = "https://stemcode.com.ng"
+
 SITE_URL = SITE_DOMAIN
 
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 

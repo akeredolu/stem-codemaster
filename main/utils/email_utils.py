@@ -57,7 +57,7 @@ def send_enrollment_payment_receipt(enrollment):
     date = getattr(enrollment, "paid_at", None)
     date_str = date.strftime("%d %B, %Y at %I:%M %p") if date else ""
 
-    fallback_subject = "Payment Receipt - STEM CodeMaster"
+    fallback_subject = "Payment Receipt - STEM Code"
     fallback_message = f"""
 Hello {enrollment.full_name},
 
@@ -65,7 +65,7 @@ We have received your enrollment fee payment of ₦{amount:,} on {date_str} via 
 
 Your enrollment is now active. 🎉
 
--- STEM CodeMaster Team
+-- STEM Code Team
 """
     context = {
         "full_name": enrollment.full_name,
@@ -91,7 +91,7 @@ Hello {enrollment.full_name},
 
 Your payment could not be verified. Please try again or contact support.
 
--- STEM CodeMaster Team
+-- STEM Code Team
 """
     send_templated_email(
         enrollment,
@@ -111,7 +111,7 @@ Your course enrollment is now active! 🎉
 
 You can log in to your dashboard to start learning.
 
--- STEM CodeMaster Team
+-- STEM Code Team
 """
     send_templated_email(
         enrollment,
@@ -129,7 +129,7 @@ Hello {enrollment.full_name},
 
 Your password reset was successful. You can now log in with your new password.
 
--- STEM CodeMaster Team
+-- STEM Code Team
 """
     send_templated_email(
         enrollment,
@@ -144,7 +144,7 @@ Your password reset was successful. You can now log in with your new password.
 # Secret Code Email
 # -------------------------------
 def send_secret_code_email(enrollment, code):
-    subject = "Your STEM CodeMaster Secret Code"
+    subject = "Your STEM Code Secret Code"
     message = f"""
 Hello {enrollment.full_name},
 
@@ -155,7 +155,7 @@ Here is your secret login code: {code}
 Use this code to log in via the secret login page.
 
 Best regards,  
-STEM CodeMaster Team
+STEM Code Team
 """
     send_plain_email_async(
         subject=subject,
@@ -280,10 +280,10 @@ def send_payment_receipt(enrollment):
 Hello {enrollment.full_name},
 
 We have received your payment of ₦{enrollment.amount_paid} for the course '{enrollment.course.title}'.
-Thank you for enrolling in STEM CodeMaster!
+Thank you for enrolling in STEM Code!
 
 Best regards,
-STEM CodeMaster Team
+STEM Code Team
 """
     # Send asynchronously via Celery
     send_email_task.delay(

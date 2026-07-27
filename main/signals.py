@@ -335,14 +335,14 @@ Here is your secret login code: {code}
 Use this code to log in via the secret login page.
 
 Best regards,
-STEM CodeMaster Team
+STEM Code Team
 """
 
     # Send plain text email via Brevo
     try:
         send_brevo_email(
             to_email=instance.email,
-            subject=f"Your STEM CodeMaster Secret Code{' (Auto)' if reason=='Bank transfer proof uploaded' else ''}",
+            subject=f"Your STEM Code Secret Code{' (Auto)' if reason=='Bank transfer proof uploaded' else ''}",
             html_content=f"<pre>{plain_text_message}</pre>"
         )
         logger.info(f"[EMAIL SENT ✅] Secret code to {instance.email}")

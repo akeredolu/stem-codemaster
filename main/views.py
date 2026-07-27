@@ -102,7 +102,7 @@ def home(request):
                     "Thanks for reaching out. We'll get back to you shortly.\n\n"
                     "Your message:\n"
                     f"{contact.message}\n\n"
-                    "-STEM Codemaster Team."
+                    "-STEM Code Team."
                 )
 
             # Send auto-reply via Brevo HTTP API
@@ -467,7 +467,7 @@ def enrolment_payment_verify(request, enrollment_id):
             f"({enrollment.program}) has been successfully received.\n\n"
             f"Here is your secret login code: {secret_code}\n\n"
             "Keep it safe to log in and access your course.\n\n"
-            "- STEM CodeMaster Team"
+            "- STEM Code Team"
         )
 
         try:
@@ -537,7 +537,7 @@ Dear {enrollment.full_name},
 We have received your bank transfer proof for the ₦2,500 enrollment fee.
 We will verify the payment and send you your secret code shortly.
 
-- STEM CodeMaster Team
+- STEM Code Team
                     </pre>
                     """
                 )
@@ -649,7 +649,7 @@ def send_payment_receipt(payment):
     # -----------------------------
     # ✅ Send payment receipt email (Brevo HTTP API)
     # -----------------------------
-    subject = "STEM CodeMaster - Payment Receipt"
+    subject = "STEM Code - Payment Receipt"
     body = f"""
 Dear {enrollment.full_name},
 
@@ -662,7 +662,7 @@ Payment Method: {payment.payment_method.upper()}
 Your access has been granted. Use your secret login code to log in.
 
 Best regards,
-STEM CodeMaster Team
+STEM Code Team
 """
 
     try:
@@ -985,7 +985,7 @@ def initial_password_set(request):
 
             messages.success(
                 request,
-                "✅ Your password has been set successfully! Welcome to STEM CodeMaster 🚀"
+                "✅ Your password has been set successfully! Welcome to STEM Code 🚀"
             )
             return redirect('portal')
         else:
@@ -1042,8 +1042,8 @@ def send_payment_receipt(enrollment):
         f"Your payment for enrollment in "
         f"{enrollment.course if isinstance(enrollment.course, str) else enrollment.course.title()} "
         f"has been successfully received.\n\n"
-        f"Thank you for enrolling in the {enrollment.program} program at STEM CodeMaster!\n\n"
-        "-- STEM CodeMaster Team"
+        f"Thank you for enrolling in the {enrollment.program} program at STEM Code!\n\n"
+        "-- STEM Code Team"
     )
 
     try:

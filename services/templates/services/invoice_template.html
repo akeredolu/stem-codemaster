@@ -1,127 +1,281 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Invoice #{{ service_request.id }} - STEM CodeMaster</title>
-</head>
-<body style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #334155; line-height: 1.5; margin: 0; padding: 0; background-color: #ffffff;">
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
 
-    <div style="width: 100%; max-width: 680px; margin: 30px auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);">
-        
-        <!-- Header Section: Brand Identity & Invoice Metadata -->
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 40px;">
-            <tr>
-                <td valign="top">
-                    <h1 style="margin: 0; font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">STEM CodeMaster</h1>
-                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-weight: 500; text-uppercase: uppercase; letter-spacing: 0.5px;">Professional Services Invoice</p>
-                </td>
-                <td valign="top" align="right" style="text-align: right;">
-                    <div style="background-color: #f1f5f9; display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: 700; color: #1e293b; font-size: 12px;">
-                        INVOICE ID: #{{ service_request.id }}
-                    </div>
-                    <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8;">Issued: {% now "F d, Y" %}</p>
-                </td>
-            </tr>
-        </table>
+{% block content %}
+<!-- Premium Framework Assets (Kept for Swiper / Font Icons) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-bottom: 30px;">
+<!-- Floating Navigation System -->
+<a href="{% url 'home' %}" class="fixed bottom-6 left-6 z-50 bg-white text-slate-900 px-5 py-3 rounded-full text-sm font-semibold shadow-xl border border-slate-100 hover:text-blue-600 hover:-translate-y-0.5 hover:shadow-2xl transition-all duration-300 ease-out flex items-center gap-2">
+    <i class="bi bi-house text-blue-600"></i>
+    <span>Dashboard Home</span>
+</a>
 
-        <!-- Meta Grid Info: Bill To & Settlement Parameters -->
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 40px;">
-            <tr>
-                <td width="55%" valign="top">
-                    <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Billed To</p>
-                    <strong style="font-size: 15px; color: #0f172a; display: block; margin-bottom: 2px;">{{ service_request.name }}</strong>
-                    <span style="font-size: 13px; color: #475569;">{{ service_request.email }}</span>
-                </td>
-                <td width="45%" valign="top" style="padding-left: 20px;">
-                    <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Payment Details</p>
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td style="font-size: 12px; color: #64748b; padding-bottom: 4px;">Method:</td>
-                            <td align="right" style="font-size: 12px; font-weight: 600; color: #334155; padding-bottom: 4px; text-align: right;">
-                                {{ service_request.payment_method|default:"N/A"|upper }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 12px; color: #64748b;">Status:</td>
-                            <td align="right" style="text-align: right;">
-                                {% if service_request.payment_status == 'Verified' or service_request.payment_status == 'Paid' %}
-                                    <span style="font-size: 11px; font-weight: 700; color: #16a34a; background-color: #dcfce7; padding: 2px 8px; border-radius: 4px;">{{ service_request.payment_status|upper }}</span>
-                                {% else %}
-                                    <span style="font-size: 11px; font-weight: 700; color: #b45309; background-color: #fef3c7; padding: 2px 8px; border-radius: 4px;">{{ service_request.payment_status|default:"PENDING"|upper }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-
-        <!-- Itemized Ledger Breakdown Table -->
-        <table width="100%" cellpadding="12" cellspacing="0" border="0" style="margin-bottom: 30px; border-radius: 8px; overflow: hidden;">
-            <thead>
-                <tr style="background-color: #0f172a;">
-                    <th align="left" style="color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-top-left-radius: 8px; border-bottom-left-radius: 8px;">Description of Service</th>
-                    <th align="right" style="color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: right; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">Line Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr style="background-color: #f8fafc;">
-                    <td style="border-bottom: 1px solid #edf2f7; padding-top: 20px; padding-bottom: 20px;">
-                        <strong style="color: #1e293b; font-size: 14px; display: block; margin-bottom: 4px;">{{ service_request.service.name }}</strong>
-                        <span style="color: #64748b; font-size: 12px;">Complete training program reservation & registration.</span>
-                    </td>
-                    <td align="right" valign="middle" style="border-bottom: 1px solid #edf2f7; color: #1e293b; font-size: 14px; font-weight: 600; text-align: right; padding-top: 20px; padding-bottom: 20px;">
-                        ₦{{ service_request.amount_due|floatformat:2 }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- Financial Summary Aggregations Balance Box -->
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
-            <tr>
-                <td width="50%">&nbsp;</td>
-                <td width="50%">
-                    <table width="100%" cellpadding="6" cellspacing="0" border="0" style="font-size: 13px;">
-                        <tr>
-                            <td style="color: #64748b;">Subtotal:</td>
-                            <td align="right" style="text-align: right; color: #334155; font-weight: 500;">₦{{ service_request.amount_due|floatformat:2 }}</td>
-                        </tr>
-                        <tr>
-                            <td style="color: #64748b; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0;">Total Amount Paid:</td>
-                            <td align="right" style="text-align: right; color: #16a34a; font-weight: 600; padding-bottom: 12px; border-bottom: 1px dashed #e2e8f0;">
-                                ₦{{ service_request.amount_paid|default:"0.00"|floatformat:2 }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="color: #0f172a; font-weight: 700; padding-top: 12px; font-size: 14px;">Balance Outstanding:</td>
-                            <td align="right" style="text-align: right; color: #0f172a; font-weight: 800; padding-top: 12px; font-size: 16px;">
-                                ₦{% widthratio service_request.amount_due 10 9 %}
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-
-        <!-- Structural Divider Line -->
-        <div style="border-top: 1px solid #f1f5f9; margin-top: 50px; margin-bottom: 20px;"></div>
-
-        <!-- Document Footer & Verification Legal Meta Actions -->
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="text-align: center;">
-            <tr>
-                <td>
-                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: #1e293b;">Thank you for your business with STEM CodeMaster!</p>
-                    <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-                        This is an automated platform transaction document. For queries or operational corrections, contact 
-                        <a href="mailto:admin@stemcodemaster.com" style="color: #2563eb; text-decoration: none; font-weight: 500;">admin@stemcodemaster.com</a>
-                    </p>
-                </td>
-            </tr>
-        </table>
-
+<!-- Premium Dynamic Hero Section -->
+<section class="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white text-center py-24 px-4 overflow-hidden">
+    <!-- Abstract Grid Background Grid Overlay -->
+    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <div class="relative z-10 max-w-4xl mx-auto">
+        <span class="text-blue-400 text-xs uppercase tracking-widest font-bold block mb-3">STEM CodeMaster</span>
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight text-white leading-tight">
+            Professional Services We Offer
+        </h1>
+        <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8 font-light">
+            Explore our wide range of world-class technology solutions custom-tailored for individuals, businesses, and academic institutions.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="#services-list" class="bg-white text-slate-950 hover:bg-slate-50 px-6 py-3.5 font-bold rounded-xl text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+                <i class="bi bi-grid-fill text-blue-600"></i> Browse Architecture Catalog
+            </a>
+            <a href="{% url 'home' %}" class="border border-slate-700 hover:border-slate-500 hover:bg-white/5 px-6 py-3.5 font-semibold rounded-xl text-sm transition-all flex items-center gap-2">
+                <i class="bi bi-arrow-left"></i> Back to Main
+            </a>
+        </div>
     </div>
-</body>
-</html>
+</section>
+
+<!-- Main System Services Section Grid -->
+<section id="services-list" class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center mb-16">
+            <span class="text-blue-600 text-xs uppercase tracking-widest font-bold block mb-2">Capabilities</span>
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Our Core Services</h2>
+            <div class="mx-auto bg-blue-600 rounded-full w-12 h-1 mt-3"></div>
+        </div>
+
+        <!-- 3-Column Utility Service Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for service in services %}
+            <div class="group bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-500/20 transition-all duration-300 flex flex-column justify-between">
+                <div>
+                    {% if service.icon %}
+                    <div class="bg-slate-100 group-hover:bg-blue-50 rounded-xl h-44 flex items-center justify-center p-6 mb-6 transition-colors duration-300">
+                        <img src="{{ service.icon.url }}" class="max-h-32 object-contain" alt="{{ service.name }}">
+                    </div>
+                    {% endif %}
+                    
+                    <h3 class="text-xl font-bold text-slate-900 mb-3 text-center group-hover:text-blue-600 transition-colors">
+                        {{ service.name }}
+                    </h3>
+                    <p class="text-slate-600 text-sm text-justify leading-relaxed mb-6">
+                        {{ service.description|truncatewords:25 }}
+                    </p>
+                </div>
+                
+                <div class="space-y-2 mt-auto">
+                    <!-- Trigger button modified for clean Tailwind workflow layout compatibility -->
+                    <button type="button" class="w-100 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-sm hover:shadow flex items-center justify-center gap-2 transition-all" data-bs-toggle="modal" data-bs-target="#serviceModal{{ service.id }}">
+                        <i class="bi bi-arrow-right-circle-fill"></i> View &amp; Request Track
+                    </button>
+                    {% if service.brochure %}
+                    <a href="{{ service.brochure_download_url }}" class="w-100 border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-1 transition-all">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Documentation PDF
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contextual Operational Details Modal Infrastructure -->
+            <div class="modal fade" id="serviceModal{{ service.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 rounded-3xl shadow-2xl overflow-hidden">
+                        <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h5 class="text-xl font-extrabold text-slate-900 mb-0">{{ service.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="p-6 md:p-8">
+                            <h6 class="text-xs font-bold uppercase text-blue-600 tracking-wider mb-2">Scope of Operations</h6>
+                            <p class="text-slate-600 text-sm leading-relaxed text-justify mb-6">{{ service.description }}</p>
+                            
+                            <hr class="border-slate-100 my-6">
+                            
+                            <!-- Dynamic Internal Routing Quick Form Action Trigger -->
+                            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="bi bi-lightning-charge-fill text-amber-500"></i>
+                                    <h6 class="font-bold text-slate-900 mb-0">Express Request Initialization</h6>
+                                </div>
+                                <form method="post" action="{% url 'our_services' %}" class="space-y-4">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="service" value="{{ service.id }}">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
+                                            {{ form.name|add_class:"w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Corporate Email</label>
+                                            {{ form.email|add_class:"w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 mb-1">Contact Mobile Line</label>
+                                        {{ form.phone|add_class:"w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-500 mb-1">Project Blueprint Requirements &amp; Timelines</label>
+                                        {{ form.details|add_class:"w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                                    </div>
+                                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2">
+                                        <i class="bi bi-check-circle-fill"></i> Dispatch Deployment Request
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Premium Central Regulatory Policy Box Segment -->
+        <div class="bg-slate-900 rounded-3xl p-6 md:p-8 mt-16 shadow-xl border border-slate-800 relative overflow-hidden max-w-4xl mx-auto">
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
+                <div class="bg-blue-600 shrink-0 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                    <i class="bi bi-shield-check text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold text-white mb-2 tracking-tight">Engagement Security &amp; Initiation Policy</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed text-justify">
+                        To initiate any of our corporate tech pipelines, client files undergo immediate prioritization upon validation of a <strong class="text-slate-200 font-semibold">10% service commencement deposit</strong> computed from total project validation costs. The remaining 90% balance structures uniformly down to execution benchmarks upon verified sign-off delivery. This maintains absolute operational transparency and contractual mutual protection across every development block.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+<!-- Central Intake Custom Form Module -->
+<section class="py-20 bg-white border-y border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        <div class="text-center mb-12">
+            <span class="text-blue-600 text-xs uppercase tracking-widest font-bold block mb-2">Central Intake</span>
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Request a Custom Service</h2>
+            <div class="mx-auto bg-blue-600 rounded-full w-12 h-1 mt-3"></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 shadow-xl rounded-3xl p-6 md:p-10">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800 mb-2">Select Target Technology Workspace Track</label>
+                    {{ form.service|add_class:"w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800 mb-2">Full Legal Name</label>
+                        {{ form.name|add_class:"w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-800 mb-2">Primary Email Address</label>
+                        {{ form.email|add_class:"w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800 mb-2">Mobile Contact Phone Line</label>
+                    {{ form.phone|add_class:"w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all" }}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-800 mb-2">Detailed Technical Specifications or Project Objectives</label>
+                    {{ form.details|add_class:"w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all h-32" }}
+                </div>
+                
+                <div class="text-center pt-4">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-base font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200">
+                        <i class="bi bi-send-fill"></i> Transmit Request File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Review Testimonials Showcase Section --> 
+<section class="py-20 bg-slate-50 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <span class="text-blue-600 text-xs uppercase tracking-widest font-bold block mb-2">Validation</span>
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">What Our Partners Say</h2>
+            <div class="mx-auto bg-blue-600 rounded-full w-12 h-1 mt-3"></div>
+        </div>
+
+        <!-- Swiper Presentation Wrapper -->
+        <div class="swiper testimonial-swiper py-6 overflow-visible">
+            <div class="swiper-wrapper">
+                {% for testimonial in testimonials %}
+                <div class="swiper-slide h-auto p-4">
+                    <div class="bg-white border border-slate-200/60 rounded-2xl p-8 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col justify-between text-center relative">
+                        <div>
+                            <i class="bi bi-quote text-5xl text-blue-500/10 block mb-2 absolute top-4 left-6"></i>
+                            <p class="italic text-slate-600 text-base leading-relaxed mb-6 pt-4 relative z-10">
+                                "{{ testimonial.feedback }}"
+                            </p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <div class="flex justify-center mb-3">
+                                {% if testimonial.photo %}
+                                <img src="{{ testimonial.photo.url }}" class="w-16 h-16 object-cover rounded-full ring-4 ring-slate-100 shadow" alt="{{ testimonial.client_name }}">
+                                {% else %}
+                                <img src="{% static 'assets/img/default-profile.jpg' %}" class="w-16 h-16 object-cover rounded-full ring-4 ring-slate-100 shadow" alt="Default profile">
+                                {% endif %}
+                            </div>
+                            <h4 class="font-bold text-slate-900 text-base">{{ testimonial.client_name }}</h4>
+                            {% if testimonial.client_title %}
+                            <span class="text-blue-600 text-xs font-semibold uppercase tracking-wider block mt-0.5">{{ testimonial.client_title }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Custom Clean Navigation Overlays -->
+            <div class="swiper-pagination !-bottom-2"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Enterprise Level Assistance Help Center Section -->
+<section class="py-16 bg-white text-center border-t border-slate-200">
+    <div class="max-w-xl mx-auto px-4">
+        <span class="text-blue-600 text-xs uppercase tracking-widest font-bold block mb-2">Immediate Support</span>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight mb-3">Need Direct Assistance?</h2>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8">
+            Connect directly with our operations desk routing team to expedite custom platform integrations or complex project scopes.
+        </p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="tel:+234..." class="border border-slate-200 hover:border-blue-500 hover:text-blue-600 bg-white px-6 py-3.5 rounded-xl text-slate-900 font-semibold text-sm shadow-sm hover:shadow transition-all flex items-center gap-2">
+                <i class="bi bi-telephone text-blue-500"></i> Call Operations Desk
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Initialize Testimonial Swiper Script -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        new Swiper('.testimonial-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 24,
+            loop: true,
+            autoplay: { delay: 5000, disableOnInteraction: false },
+            pagination: { el: '.swiper-pagination', clickable: true },
+            breakpoints: {
+                768: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 }
+            }
+        });
+    });
+</script>
+{% endblock %}

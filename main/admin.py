@@ -90,7 +90,7 @@ def activate_course(self, request, queryset):
                     "has been activated successfully. 🎉\n\n"
                     "You can now log in to your student portal and start learning.\n\n"
                     "Best regards,\n"
-                    "STEM CodeMaster Team"
+                    "STEM Code Team"
                 )
 
                 try:
@@ -145,14 +145,14 @@ def resend_secret_code(self, request, queryset):
 # HELPER: Send Secret Code Email (Brevo)
 # =========================================================
 def send_secret_code_email(self, enrollment, code):
-    subject = "Your STEM CodeMaster Secret Code"
+    subject = "Your STEM Code Secret Code"
     message = (
         f"Hello {enrollment.full_name},\n\n"
         "✅ Your enrollment has been confirmed.\n\n"
         f"Here is your secret login code: {code}\n\n"
         "Use this code to log in via the secret login page.\n\n"
         "Best regards,\n"
-        "STEM CodeMaster Team"
+        "STEM Code Team"
     )
 
     try:
@@ -247,7 +247,7 @@ class CoursePaymentAdmin(admin.ModelAdmin):
             f"Your payment of ₦{payment.amount_paid} for the course "
             f"'{payment.course.title}' has been verified successfully.\n\n"
             "You now have full access to your learning materials.\n\n"
-            "Thank you for choosing STEM CodeMaster!"
+            "Thank you for choosing STEM Code!"
         )
 
         try:
@@ -466,7 +466,7 @@ class AdminMessageAdmin(admin.ModelAdmin):
                                 <p><strong>{title}</strong></p>
                                 <p>{message_text}</p>
                                 <br>
-                                <p>— STEM CodeMaster Team</p>
+                                <p>— STEM Code Team</p>
                             """,
                         )
                         sent_count += 1
@@ -596,7 +596,7 @@ def send_custom_notification(modeladmin, request, queryset):
                             <p>Hello {recipient_name},</p>
                             <p>{html_message}</p>
                             <br>
-                            <p>— STEM CodeMaster Team</p>
+                            <p>— STEM Code Team</p>
                         """,
                     )
                 except Exception:
@@ -706,7 +706,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
     # Helper: Send Secret Code Email via Brevo
     # -------------------------------
     def send_secret_code_email(self, enrollment, code):
-        subject = "Your STEM CodeMaster Secret Code"
+        subject = "Your STEM Code Secret Code"
         html_message = f"""
 <p>Hello {enrollment.full_name},</p>
 
@@ -717,7 +717,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
 <p>Use this code to log in via the secret login page.</p>
 
 <br>
-<p>Best regards,<br>STEM CodeMaster Team</p>
+<p>Best regards,<br>STEM Code Team</p>
 """
         # Send asynchronously using Brevo HTTP API
         try:

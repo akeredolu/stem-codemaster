@@ -110,7 +110,7 @@ class Payment(models.Model):
                     f"Tracking Token Reference: #{request_obj.id}\n"
                     f"Amount Paid: ₦{request_obj.amount_due}\n\n"
                     "Our systems engineering desk has initialized your environment workspace tracks. We will get in touch shortly with milestone timelines.\n\n"
-                    "Thank you for choosing STEM CodeMaster!"
+                    "Thank you for choosing STEM Code!"
                 )
                 try:
                     send_brevo_email(
