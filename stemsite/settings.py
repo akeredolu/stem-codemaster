@@ -159,26 +159,27 @@ CHANNEL_LAYERS = {
 # DATABASE CONFIGURATION (LOCAL + RENDER/AIVEN)
 # =========================
 DATABASE_URL = env("DATABASE_URL")
+IS_PRODUCTION = not env.bool("DJANGO_DEBUG", default=False)
 
 DATABASES = {
     "default": dj_database_url.parse(
         DATABASE_URL,
-        conn_max_age=30,
+        
+        conn_max_age=0 if IS_PRODUCTION else 30,
         ssl_require=True,
     )
 }
 
+
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+
 
 DATABASES["default"].setdefault("OPTIONS", {})
 DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10
 
-
-# Explicitly force options for production environments
-if not env.bool("DJANGO_DEBUG", default=False):
-    DATABASES["default"]["OPTIONS"] = {
-        "sslmode": "require",
-    }
+if IS_PRODUCTION:
+   
+    DATABASES["default"]["OPTIONS"]["sslmode"] = "require"
 
 
 # Authentication
