@@ -32,6 +32,8 @@ from .views import (
 urlpatterns = [
     # Home & Portal
     path('', home, name='home'),
+    
+    path('robots.txt', views.robots_txt, name='robots_txt'),
     path('portal/', portal, name='portal'),
 
     # Authentication: Register / Login / Logout
@@ -163,7 +165,10 @@ urlpatterns = [
 
       # To keep my Aiven Database Active 24/7
     path('api/db-ping/', db_health_check, name='db_ping'),
+
 ]
+
+
 
 #urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1667,3 +1667,12 @@ def db_health_check(request):
         return JsonResponse({"status": "healthy", "database": "connected"}, status=200)
     except Exception as e:
         return JsonResponse({"status": "unhealthy", "error": str(e)}, status=500)
+
+
+def robots_txt(request):
+    content = """User-agent: *
+Allow: /
+
+Sitemap: https://stemcode.com.ng/sitemap.xml
+"""
+    return HttpResponse(content, content_type="text/plain")
