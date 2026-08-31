@@ -8,41 +8,159 @@
 
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Stem Code</title>
-  <meta name="description" content="">
-  <meta name="keywords" content="">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <!-- Primary SEO -->
+  <title>STEM Code | Coding, Programming & Robotics School for Kids in Abuja</title>
+
+  <meta
+    name="description"
+    content="STEM Code is a coding, programming and robotics school in Abuja, Nigeria, helping kids and teens learn Python, Scratch, robotics, web development and other technology skills through practical classes."
+  >
+
+  <meta name="robots" content="index, follow">
+
+  <link
+    rel="canonical"
+    href="https://stemcode.com.ng/"
+  >
 
   <!-- Favicons -->
- <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
+  <link
+    href="{% static 'assets/img/favicon.png' %}"
+    rel="icon"
+  >
 
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+
+  <meta
+    property="og:title"
+    content="STEM Code | Coding, Programming & Robotics School for Kids in Abuja"
+  >
+
+  <meta
+    property="og:description"
+    content="Learn coding, programming, robotics and web development with STEM Code. Practical online and in-person classes for kids and teens in Abuja, Nigeria."
+  >
+
+  <meta
+    property="og:url"
+    content="https://stemcode.com.ng/"
+  >
+
+  <meta
+    property="og:site_name"
+    content="STEM Code"
+  >
+
+  <meta
+    property="og:image"
+    content="https://stemcode.com.ng/static/assets/img/hero.jpg"
+  >
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+
+  <meta
+    name="twitter:title"
+    content="STEM Code | Coding, Programming & Robotics School for Kids in Abuja"
+  >
+
+  <meta
+    name="twitter:description"
+    content="Coding, programming and robotics classes for kids and teens in Abuja, Nigeria and online worldwide."
+  >
+
+  <meta
+    name="twitter:image"
+    content="https://stemcode.com.ng/static/assets/img/hero.jpg"
+  >
+
+  <!-- Organization Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "@id": "https://stemcode.com.ng/#organization",
+    "name": "STEM Code",
+    "url": "https://stemcode.com.ng/",
+    "logo": "https://stemcode.com.ng/static/assets/img/favicon.png",
+    "image": "https://stemcode.com.ng/static/assets/img/hero.jpg",
+    "description": "STEM Code is a coding, programming and robotics school in Abuja, Nigeria, offering practical technology education for kids and teens through online and in-person programs.",
+    "telephone": "+2348037523826",
+    "email": "info@stemcode.com.ng",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Close D, Road 42, Off Day by Day, PW-Kubwa",
+      "addressLocality": "Abuja",
+      "addressRegion": "FCT",
+      "addressCountry": "NG"
+    },
+    "sameAs": [
+      "https://www.facebook.com/Akeredolu.Waheed",
+      "https://www.linkedin.com/in/akeredolu-waheed/"
+    ]
+  }
+  </script>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
-  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
- 
+  <link
+    href="https://fonts.gstatic.com"
+    rel="preconnect"
+    crossorigin
+  >
 
   <!-- Vendor CSS Files -->
-  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/aos/aos.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet"> 
+  <link
+    href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}"
+    rel="stylesheet"
+  >
+
+  <link
+    href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}"
+    rel="stylesheet"
+  >
+
+  <link
+    href="{% static 'assets/vendor/aos/aos.css' %}"
+    rel="stylesheet"
+  >
+
+  <link
+    href="{% static 'assets/vendor/glightbox/css/glightbox.min.css' %}"
+    rel="stylesheet"
+  >
+
+  <link
+    href="{% static 'assets/vendor/swiper/swiper-bundle.min.css' %}"
+    rel="stylesheet"
+  >
 
   <!-- Main CSS File -->
-  <link href="{% static 'assets/css/main.css' %}" rel="stylesheet">
-  <link href="{% static 'assets/css/main2.css' %}" rel="stylesheet">
+  <link
+    href="{% static 'assets/css/main.css' %}"
+    rel="stylesheet"
+  >
+
+  <link
+    href="{% static 'assets/css/main2.css' %}"
+    rel="stylesheet"
+  >
 
 </head>
 
 <body class="index-page">
 
-  <header id="header" class="fixed-top d-none"></header>
-
- {% if messages %}
+{% if messages %}
   <div id="message-container" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;">
     {% for message in messages %}
-      <div class="alert alert-success alert-dismissible fade show" id="auto-dismiss-msg" role="alert">
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'success' }}{% endif %} alert-dismissible fade show" role="alert">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
@@ -50,84 +168,87 @@
   </div>
 {% endif %}
 
-
- {% if request.path == '/' %}
-
+{% if request.path == '/' %}
   <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container position-relative d-flex align-items-center justify-content-between">
-
       <a href="{% url 'home' %}" class="logo d-flex align-items-center me-auto me-xl-0">
- 
         <h1 class="sitename">Stem Code</h1>
       </a>
 
-  <nav id="navmenu" class="navmenu">
-  <ul>
-    <li><a href="{% url 'home' %}" class="active">Home</a></li>
-    <li><a href="#about">About</a></li>
-    <li><a href="#programs">Programs</a></li>
-    <li><a href="#courses">Courses</a></li>
-    <li><a href="#Classes-and-Fees">Classes and Fees</a></li>
-    <li><a href="{% url 'our_services' %}">Our Services</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="{% url 'portal' %}">Portal</a></li>
-  </ul>
-  <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-</nav>
-
-</div>
-</header>
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="{% url 'home' %}" class="active">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#programs">Programs</a></li>
+          <li><a href="#courses">Courses</a></li>
+          <li><a href="#Classes-and-Fees">Classes &amp; Fees</a></li>
+          <li><a href="{% url 'our_services' %}">Our Services</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="{% url 'portal' %}">Portal</a></li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
 {% endif %}
 
 <main class="main">
-	
-{% block content %}
+  {% block content %}
+  <!-- Hero Section -->
+  <section id="hero" class="hero section dark-background">
+    <img src="{% static 'assets/img/hero.jpg' %}" alt="STEM Code coding and robotics school for kids in Abuja" data-aos="fade-in">
 
-<!-- Hero Section -->
-<section id="hero"  class="hero section dark-background position-relative">
+    <div class="container text-center text-white" data-aos="fade-up">
+      <div class="row justify-content-center">
+        <div class="col-lg-9 col-md-11">
+          
+          <h1 class="hero-heading" data-aos="fade-up">
+            Online Coding, Programming &amp; Robotics School for Kids &amp; Teens in Abuja
+          </h1>
 
-<!-- Fullscreen background image -->
-  <img src="{% static 'assets/img/hero.jpg' %}" alt="STEM Code Hero Image" class="img-fluid w-100" data-aos="fade-in">
+          <p class="hero-text" data-aos="fade-up" data-aos-delay="100">
+            STEM Code helps kids and teens develop practical technology skills through engaging, hands-on learning.
+          </p>
 
-<!-- Centralized content block -->
-<div class="container text-center text-white d-flex flex-column justify-content-center align-items-center position-absolute top-50 start-50 translate-middle" style="z-index: 2;">
-    
-<h3 class="lead mt-3" data-aos="fade-up" data-aos-delay="200">
-  A vibrant online school teaching <strong>coding</strong>, <strong>programming</strong>, and <strong>robotics</strong> to kids and teens worldwide.
-</h3>
+          <p class="hero-subtext" data-aos="fade-up" data-aos-delay="200">
+            Our mission is to equip the next generation with the skills to thrive in a tech-driven future.
+          </p>
 
-<p class="mt-2" data-aos="fade-up" data-aos-delay="300">
-  We ignite creativity and innovation through hands-on, engaging learning experiences that build real-world tech skills.
-</p>
+          <!-- Dynamic Typing Animation Target -->
+          <h2 class="hero-typed-wrapper mt-4">
+            <span id="typed"></span>
+          </h2>
 
-<p class="lead mt-3" data-aos="fade-up" data-aos-delay="400">
-  Our mission is to equip the next generation with the skills to thrive in a tech-driven future.
-</p>
+          <!-- Call to Action Buttons (Displays instantly on load) -->
+          <div class="hero-cta-group mt-4 d-flex justify-content-center align-items-center gap-3 flex-wrap">
 
-<!-- Typing animation -->
-    <h2 class="mt-4">
-      <span id="typed"></span>
-    </h2>
+            <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">
+              🚀 Get Started
+            </a>
 
- <!-- CTA Buttons -->
-<div class="mt-4 text-center d-flex justify-content-center gap-3 flex-wrap">
-  <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg">🚀 Get Started</a>
-  <a href="{% url 'enroll_now' %}" class="btn btn-outline-light btn-lg">📩 Join Now</a>
-  <a href="https://res.cloudinary.com/dx4v4yjb1/raw/upload/v1/services/brochures/STEM_Code_Services_Brochure_pq83ji.pdf"
-   class="btn btn-outline-warning btn-lg"
-   target="_blank"
-   download>
-  📄 Download Our Services Brochure
-</a>
-  <div class="btn btn-outline-success btn-lg d-flex flex-column align-items-center">
-    📞 Call Admin
-    <small class="mt-1">+234 803 752 3826</small>
-  </div>
+            <a href="{% url 'enroll_now' %}" class="btn btn-outline-light btn-lg">
+               📩 Enrol Now
+            </a>
 
-</div>
-</div>
+            <a href="https://res.cloudinary.com/dx4v4yjb1/raw/upload/v1/services/brochures/STEM_Code_Services_Brochure_pq83ji.pdf" 
+              class="btn btn-outline-light btn-lg" 
+              target="_blank" 
+              rel="noopener" 
+              download>
+              📄 Services Brochure
+            </a>
 
-</section>
+            <a href="tel:+2348037523826" class="btn btn-outline-light btn-lg d-inline-flex flex-column align-items-center justify-content-center py-2 px-4 lh-sm">
+              <span>📞 Call Admin</span>
+              <small class="fs-6 fw-normal mt-1 opacity-75">+234 803 752 3826</small>
+            </a>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
 
 <!-- Hero Section  End-->
     
@@ -142,12 +263,12 @@
     <div class="row gy-4">
 
       <div class="col-lg-6 content" data-aos="fade-up" data-aos-delay="100">
-        <h4>Who We Are</h4>
+        <h3>Who We Are</h3>
         <p style="text-align: justify;">{{ about.who_we_are }}</p>
       </div>
 
       <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
-        <h4>What We Do</h4>
+        <h3>What We Do</h3>
         <p style="text-align: justify;">{{ about.what_we_do }}</p>
         <a href="{% url 'register' %}" class="read-more">
           <span>Register Now!</span><i class="bi bi-arrow-right"></i>
@@ -185,7 +306,7 @@
         <div class="card h-100 shadow-sm">
           <div class="card-body">
 
-            <h5 class="card-title" style="text-align: center;">{{ program.title }}</h5>
+            <h3 class="card-title" style="text-align: center;">{{ program.title }}</h3>
 
             <p class="card-text text-justify">
               <strong>Description:</strong> {{ program.description }}
@@ -294,7 +415,7 @@
 <section id="courses" class="py-5 bg-light">
   <div class="container">
     <div class="text-center mb-5" data-aos="fade-up">
-      <h2 class="fw-bold">Our Courses</h2>
+      <h3 class="fw-bold">Our Courses</h3>
       <p class="text-muted">
         Explore our collection of hands‑on coding, robotics and programming courses designed for all ages and skill levels.
       </p>
@@ -424,7 +545,7 @@
 {% load static %}
 
 <section class="container my-2 pt-2">
-  <h3 class="text-center mb-4">What Parents and Students Are Saying About Us</h3>
+  <h2 class="text-center mb-4">What Parents and Students Are Saying About Us</h2>
 
   <div class="swiper">
     <div class="swiper-wrapper">
@@ -463,7 +584,7 @@
 <!--Contact Section-->
 <section id="contact" class="contact section light-background">
   <div class="container section-title" data-aos="fade-up">
-    <h2>Contact</h2>
+    <h2>Contact STEM Code</h2>
     <p>Please, contact us for any clarification.</p>
   </div>
 

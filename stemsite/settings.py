@@ -32,7 +32,7 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 
 ALLOWED_HOSTS = env.list(
     'DJANGO_ALLOWED_HOSTS',
-    default=['localhost', '127.0.0.1', 'stem-codemaster-hkau.onrender.com', 'stemcode.com.ng', 'www.stemcode.com.ng']  
+    default=['localhost', '127.0.0.1', 'stem-code-hkau.onrender.com', 'stemcode.com.ng', 'www.stemcode.com.ng']  
 )
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     
     
     "cloudinary",

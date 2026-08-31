@@ -11,6 +11,7 @@ class StaticViewSitemap(Sitemap):
             "home",
             "register",
             "enroll_now",
+            "services",
         ]
 
     def location(self, item):

@@ -739,6 +739,93 @@ section,
   justify-content: center;
 }
 
+
+
+
+/*--------------------------------------------------------------
+# Custom Hero Typography
+--------------------------------------------------------------*/
+.hero .hero-heading {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hero .hero-text {
+  font-size: 1.25rem;
+  margin-top: 1rem;
+}
+
+.hero .hero-subtext {
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+.hero .hero-typed-wrapper {
+  min-height: 2.5rem;
+  font-weight: 600;
+}
+
+/*--------------------------------------------------------------
+# Hero Call To Action Group (btn-outline-light style)
+--------------------------------------------------------------*/
+.hero-cta-group {
+  margin-top: 1.5rem;
+}
+
+.hero-cta-group .btn-outline-light {
+  border-width: 2px;
+  border-radius: 50px;
+  font-weight: 500;
+  padding: 12px 26px;
+  transition: all 0.3s ease-in-out;
+  backdrop-filter: blur(5px);
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-cta-group .btn-outline-light:hover {
+  background-color: #ffffff;
+  color: #111111 !important;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Specific alignment tweak for the two-line Call Admin button */
+.hero-cta-group a[href^="tel:"] {
+  min-height: 54px;
+}
+
+/*--------------------------------------------------------------
+# Mobile Responsiveness
+--------------------------------------------------------------*/
+@media (max-width: 768px) {
+  .hero .hero-heading {
+    font-size: 1.75rem;
+  }
+  
+  .hero .hero-text {
+    font-size: 1.1rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    padding: 0 15px;
+  }
+  
+  .hero-cta-group .btn-outline-light {
+    width: 100%;
+    max-width: 340px;
+  }
+}
+
+
+
+
+
+
 .about .read-more i {
   font-size: 18px;
   margin-left: 5px;
